@@ -1,3 +1,5 @@
+import numpy
+import scipy
 from sklearn.feature_extraction.text import TfidfVectorizer
 
 verbosity = 2
@@ -16,9 +18,9 @@ def sp_permute(A, perm_r, perm_c):
     """
     M, N = A.shape
     # row permumation matrix
-    Pr = sp.coo_matrix((np.ones(M), (perm_r, np.arange(N)))).tocsr()
+    Pr = scipy.sparse.coo_matrix((numpy.ones(M), (perm_r, numpy.arange(N)))).tocsr()
     # column permutation matrix
-    Pc = sp.coo_matrix((np.ones(M), (np.arange(M), perm_c))).tocsr()
+    Pc = scipy.sparse.coo_matrix((numpy.ones(M), (numpy.arange(M), perm_c))).tocsr()
     return Pr.T * A * Pc.T
 
 

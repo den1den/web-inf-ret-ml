@@ -1,13 +1,12 @@
 import json
 from unittest import TestCase
-
 import numpy
+from scipy.sparse.csgraph import reverse_cuthill_mckee
 from PIL.Image import fromarray
-from scipy.sparse.csgraph._reordering import reverse_cuthill_mckee
 
 from similarity import similarity_strings, similarity_tf
 
-with open("test_news/tc1.json") as fp:
+with open("test_news/tc1.json", encoding="utf8") as fp:
     data = json.load(fp)
 
 with open("test_tweets/100-elections.json") as fp:
@@ -49,6 +48,7 @@ class TestCaseTweets(TestCase):
         texts = [tweet['text'] for tweet in data2]
         tweets_sim = similarity_tf(*texts)
         minbandwidth_perm = reverse_cuthill_mckee(tweets_sim, True)
+        print("Length %s, Permutation: %s" % (tweets_sim.shape[0], minbandwidth_perm, ))
         # Could use more efficient matricx prepresenation
         tweets_sim_cuthillmckee = [[tweets_sim[x][y] for y in minbandwidth_perm] for x in minbandwidth_perm]
         rgbss = numpy.array([numpy.array([numpy.array(el, 0, 0) for el in row]) for row in tweets_sim_cuthillmckee])
