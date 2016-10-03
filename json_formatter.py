@@ -1,6 +1,8 @@
 import json
 
-with open('in.txt') as rf:
+with open('elections.json') as rf:
     data = json.load(rf)
-with open('out.json', 'w') as wf:
-    json.dump(data[0:100], wf, indent=2)
+print("Read in OK")
+
+# with open('elections-out.json', 'w') as wf:
+#    json.dump(data[0:100], wf, indent=2)
