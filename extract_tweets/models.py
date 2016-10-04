@@ -3,7 +3,7 @@ class Tweet(dict):
         super().__init__(iterable, **kwargs)
 
     def __str__(self, *args, **kwargs):
-        return self['text']
+       return self['text']
 
     def get_hashtags(self):
         return [h['text'] for h in self['entities']['hashtags']]
