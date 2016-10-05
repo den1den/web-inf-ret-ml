@@ -11,6 +11,4 @@ def convert_tweet(filename):
 
 tweets = convert_tweet('xaa.valid.json')
 
-[print("<>" + str(tweets[i].get_hashtags()) + ",,,," + str(tweets[i]['entities']['hashtags']) + "</>") or print() for i
- in
- range(0, 9)]
+[print("<>" + str(tweets[i]) + "</>") or print() for i in range(0, 9)]
