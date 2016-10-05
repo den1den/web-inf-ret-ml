@@ -1,1 +1,2 @@
-tweet_dir = ""
+TWEETS_HOMEDIR = '/home/dennis/pCloudDrive/tweets/elections-28-09-raw'
+LOCAL_DIR = '/home/dennis/repos/web-inf-ret-ml/test_tweets/local'
