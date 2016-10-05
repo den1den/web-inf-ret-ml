@@ -22,8 +22,8 @@ Aside from the data, a separate list of the users with:
 - 'followers_count:int': The number of followers of the user
 - 'favourites_count:int': The number of favourites of the user
 - 'statuses_count:int': The number of statuses of the user
-- 'created_at:string: when the user profile is created
-- 'location:string'': Location of the user
+- `created_at:int`: When the user profile is created (as unix timestamp)
+- `location:string`: Location of the user (The state is also enough)
 
 
 ## Constraints
