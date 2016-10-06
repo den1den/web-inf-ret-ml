@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from ml import test_task
+from machine_learning.ml import test_task
 
 
 class TestMl(TestCase):
