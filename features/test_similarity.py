@@ -1,18 +1,69 @@
+import csv
 import json
+import time
 from unittest import TestCase
 
-import numpy
-from PIL.Image import fromarray
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 from similarity import similarity_strings, similarity_tf
 
-from config.config import PROJECT_DIR
+from config.config import PROJECT_DIR, DROPBOX
+from extract_tweets.convert_tweet import get_tweets
+from extract_tweets.imaging import plot_and_show_matrix
 
 with open(PROJECT_DIR + "test_news/tc1.json", encoding="utf8") as fp:
     data = json.load(fp)
 
 with open(PROJECT_DIR + "test_tweets/100-elections.json") as fp:
     data2 = json.load(fp)
+
+
+class TestCase2(TestCase):
+    def test_sim(self):
+        tweets = get_tweets(5)[0:100]
+
+        word_set = set()
+        for tweet in tweets:
+            for w in tweet.get_words():
+                word_set.add(w)
+
+        word_freqs = []
+        for tweet in tweets:
+            words = tweet.get_words()
+            r = [tweet.id, ]
+            for word in word_set:
+                if word in words:
+                    r.append(1)
+                else:
+                    r.append(0)
+            word_freqs.append(r)
+
+        with open(DROPBOX + 'tmp/word_freq.csv', 'w') as csvfile:
+            csvwriter = csv.writer(csvfile, delimiter=";")
+            for row in word_freqs:
+                csvwriter.writerow(row)
+        print("done")
+        return
+
+        matrix = similarity_tf([tweet.get_txt() for tweet in tweets])
+        matrix[matrix > 0.33] = 0
+
+        print("Starting on McKee")
+        t0 = time.time()
+        cuthill_mckee_perm = reverse_cuthill_mckee(matrix, True)
+        print(cuthill_mckee_perm)
+        t1 = time.time()
+        print("Starting on McKee-conversion")
+        matrix = matrix[:, cuthill_mckee_perm]
+        matrix = matrix[cuthill_mckee_perm, :]
+        t2 = time.time()
+        print("Cuthill mckee permutation in %.2f seconds, conversion %.2f seconds" % (t1 - t0, t2 - t1))
+        # for i in cuthill_mckee_perm[range(674, 734)]:
+        # for i in cuthill_mckee_perm[range(701, 733)]:
+        for i in cuthill_mckee_perm[range(1660, 1822)]:
+            print(str(tweets[i]))
+        return
+        # rev_perm = cuthill_mckee_perm[cuthill_mckee_perm]
+        plot_and_show_matrix(matrix)
 
 
 class GeneralTestCase(TestCase):
@@ -51,8 +102,6 @@ class TestCaseTweets(TestCase):
         tweets_sim = similarity_tf(*texts)
         minbandwidth_perm = reverse_cuthill_mckee(tweets_sim, True)
         # Could use more efficient matricx prepresenation
-        tweets_sim_cuthillmckee = [[tweets_sim[x, y] for y in minbandwidth_perm] for x in minbandwidth_perm]
-        rgbss = numpy.array([numpy.array([(el, 0, 0,) for el in row]) for row in tweets_sim_cuthillmckee])
-        print("rgbss: %s" % (rgbss,))
-        img = fromarray(rgbss, 'RGB')
-        img.save('my.png')
+        tweets_sim_cuthillmckee = [[(0 if x == y else tweets_sim[x, y]) for y in minbandwidth_perm] for x in
+                                   minbandwidth_perm]
+        plot_and_show_matrix(tweets_sim_cuthillmckee, 1)

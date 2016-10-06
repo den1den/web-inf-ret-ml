@@ -24,10 +24,16 @@ def sp_permute(A, perm_r, perm_c):
     return Pr.T * A * Pc.T
 
 
-def similarity_tf(*strings):
+def similarity_tf(strings):
+    """
+    :param strings: array of all the string that needs top be compared
+    :return:
+    """
+    # onestirng = ""
+    # for s in strings:
+    #     onestirng += str(s) + "\n"
+    # print(onestirng, file=open(PROJECT_DIR+'tmp.txt', mode='w'))
     tfidf = TfidfVectorizer().fit_transform(strings)
     # no need to normalize, since Vectorizer will return normalized tf-idf
     pairwise_similarity = tfidf * tfidf.T
-    if verbosity >= 2:
-        print("similarity_tf: \n%s" % pairwise_similarity.toarray())
     return pairwise_similarity

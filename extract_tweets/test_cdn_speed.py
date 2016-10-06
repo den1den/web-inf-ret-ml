@@ -3,7 +3,7 @@ import time
 from unittest import TestCase
 
 from config.config import TWEETS_HOMEDIR, LOCAL_DIR
-from extract_tweets.convert_tweet import convert_tweet
+from extract_tweets.convert_tweet import convert_tweets
 
 
 class TestCdnSpeed(TestCase):
@@ -15,7 +15,7 @@ class TestCdnSpeed(TestCase):
         i = 0
         start = time.time()
         for tweetfilename in os.listdir(TWEETS_HOMEDIR):
-            tweets = convert_tweet(os.path.join(TWEETS_HOMEDIR, tweetfilename))
+            tweets = convert_tweets(os.path.join(TWEETS_HOMEDIR, tweetfilename))
             if i == N:
                 break
             i += 1
@@ -25,7 +25,7 @@ class TestCdnSpeed(TestCase):
         i = 0
         start = time.time()
         for tweetfilename in os.listdir(LOCAL_DIR):
-            tweets = convert_tweet(os.path.join(LOCAL_DIR, tweetfilename))
+            tweets = convert_tweets(os.path.join(LOCAL_DIR, tweetfilename))
             if i == N:
                 break
             i += 1

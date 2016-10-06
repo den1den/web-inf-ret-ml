@@ -4,7 +4,7 @@ import time
 from unittest import TestCase
 
 from config.config import TWEETS_HOMEDIR, DROPBOX
-from extract_tweets.convert_tweet import convert_tweet
+from extract_tweets.convert_tweet import convert_tweets
 from features import simple
 
 
@@ -18,7 +18,7 @@ class TestScanConversations(TestCase):
         cons_n = 0
         for tweetfilename in os.listdir(tweets_dir):
             i += 1
-            tweets = convert_tweet(os.path.join(tweets_dir, tweetfilename))
+            tweets = convert_tweets(os.path.join(tweets_dir, tweetfilename))
             if tweets is None:
                 continue
             n += len(tweets)

@@ -1,3 +1,6 @@
+import re
+
+
 class Tweet(dict):
     def __init__(self, iterable=None, **kwargs):
         super().__init__(iterable, **kwargs)
@@ -14,6 +17,9 @@ class Tweet(dict):
         # equals can be faster?
         return super().__eq__(*args, **kwargs)
 
+    def get_txt(self):
+        return self['fulltext'] if 'fulltext' in self else self['text']
+
     def get_hashtags(self):
         return [h['text'] for h in self['entities']['hashtags']]
 
@@ -21,3 +27,6 @@ class Tweet(dict):
         if "retweeted_status" not in self:
             return None
         return self["retweeted_status"]['id'] or None
+
+    def get_words(self):
+        return [word.lower() for word in re.split('\s+', self.get_txt())]
