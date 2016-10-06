@@ -1,15 +1,17 @@
 import json
 from unittest import TestCase
-import numpy
-from scipy.sparse.csgraph import reverse_cuthill_mckee
-from PIL.Image import fromarray
 
+import numpy
+from PIL.Image import fromarray
+from scipy.sparse.csgraph import reverse_cuthill_mckee
 from similarity import similarity_strings, similarity_tf
 
-with open("test_news/tc1.json", encoding="utf8") as fp:
+from config.config import PROJECT_DIR
+
+with open(PROJECT_DIR + "test_news/tc1.json", encoding="utf8") as fp:
     data = json.load(fp)
 
-with open("test_tweets/100-elections.json") as fp:
+with open(PROJECT_DIR + "test_tweets/100-elections.json") as fp:
     data2 = json.load(fp)
 
 

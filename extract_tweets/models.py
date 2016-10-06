@@ -18,4 +18,6 @@ class Tweet(dict):
         return [h['text'] for h in self['entities']['hashtags']]
 
     def get_retweet_id(self):
+        if "retweeted_status" not in self:
+            return None
         return self["retweeted_status"]['id'] or None

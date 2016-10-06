@@ -2,13 +2,12 @@ import os
 import time
 from unittest import TestCase
 
+from config.config import TWEETS_HOMEDIR, LOCAL_DIR
 from extract_tweets.convert_tweet import convert_tweet
 
 
 class TestCdnSpeed(TestCase):
     def test_speedtest(self):
-        TWEETS_HOMEDIR = '/home/dennis/pCloudDrive/tweets/elections-28-09-raw'
-        LOCAL_DIR = '/home/dennis/repos/web-inf-ret-ml/test_tweets/local'
         self.speedtest(TWEETS_HOMEDIR, LOCAL_DIR)
 
     def speedtest(self, TWEETS_HOMEDIR, LOCAL_DIR):

@@ -1,2 +1,3 @@
-TWEETS_HOMEDIR = '/home/dennis/pCloudDrive/tweets/elections-28-09-raw'
-LOCAL_DIR = '/home/dennis/repos/web-inf-ret-ml/test_tweets/local'
+TWEETS_HOMEDIR = '/home/dennis/pCloudDrive/tweets/'
+PROJECT_DIR = '/home/dennis/repos/web-inf-ret-ml/'
+DROPBOX = '/home/dennis/Dropbox/2IMW15 - Web information retrieval and data mining/Web inf. retrieval group project/'
