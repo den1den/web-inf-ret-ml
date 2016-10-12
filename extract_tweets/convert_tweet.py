@@ -9,12 +9,12 @@ from extract_tweets.models import Tweet
 def get_tweets(n=None, offset=0, dir='elections-29-09-raw', filestart='xa'):
     """
     TODO; to be determined what data set later on
-    :param n:
-    :param offset:
+    :param n: Ending file
+    :param offset: Starting file
     :param dir:
     :return: Tweet
     """
-    i = 0
+    i = 0  # Filecounter
     start = time.time()
     tweets = []
     abs_dir = os.path.join(TWEETS_HOMEDIR, dir)

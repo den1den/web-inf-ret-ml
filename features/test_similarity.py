@@ -1,14 +1,14 @@
 import csv
 import json
+import operator
 import time
 from unittest import TestCase
-
 from scipy.sparse.csgraph import reverse_cuthill_mckee
-from similarity import similarity_strings, similarity_tf
-
+from features.similarity import similarity_strings, similarity_tf
 from config.config import PROJECT_DIR, DROPBOX
 from extract_tweets.convert_tweet import get_tweets
 from extract_tweets.imaging import plot_and_show_matrix
+from matplotlib import pyplot as plt
 
 with open(PROJECT_DIR + "test_news/tc1.json", encoding="utf8") as fp:
     data = json.load(fp)
@@ -19,27 +19,110 @@ with open(PROJECT_DIR + "test_tweets/100-elections.json") as fp:
 
 class TestCase2(TestCase):
     def test_sim(self):
-        tweets = get_tweets(5)[0:100]
+        N = 50000-39601
+        tweets = get_tweets()[0:N]
+        n_tweets = len(tweets)
+        if n_tweets < N:
+            raise Exception("To few files selected, missing %d" % (N - n_tweets))
+        print("Tweets: %d" % n_tweets)
 
         word_set = set()
+        word_freqs = dict()
         for tweet in tweets:
             for w in tweet.get_words():
                 word_set.add(w)
+                word_freqs[w] = 0
+        print("Found %s words over all tweets" % len(word_set))
 
-        word_freqs = []
         for tweet in tweets:
             words = tweet.get_words()
-            r = [tweet.id, ]
             for word in word_set:
                 if word in words:
-                    r.append(1)
-                else:
-                    r.append(0)
-            word_freqs.append(r)
+                    word_freqs[word] += 1
+        print("Computed F for single words")
 
-        with open(DROPBOX + 'tmp/word_freq.csv', 'w') as csvfile:
+        word_freqs2 = word_freqs.copy()
+        for (word, freq) in word_freqs2.items():
+            if \
+                freq <= 0.02 * n_tweets\
+                or freq >= 0.25 * n_tweets\
+                or len(word) <= 4\
+                    :
+                word_set.discard(word)
+                word_freqs.pop(word)
+        print("Filtered out %d words" % len(word_set))
+
+        # Make pairs from `word_set`
+        pairs = set()
+        word_set_arr = list(word_set)
+        for word1 in word_set_arr:
+            i = word_set_arr.index(word1)
+            for word2 in word_set_arr[i+1:len(word_set_arr)]:
+                pairs.add((word1, word2))
+                pair_freq_key = word1 + '__' + word2
+                word_freqs[pair_freq_key] = 0
+        print("Initialized %d word pairs" % len(pairs))
+
+        for tweet in tweets:
+            words = tweet.get_words()
+            for pair in pairs:
+                if pair[0] in words and pair[1] in words:
+                    pair_freq_key = pair[0] + '__' + pair[1]
+                    word_freqs[pair_freq_key] += 1
+        print("Set F for all pairs")
+
+        sorted_word_freqs = sorted(word_freqs.items(), key=operator.itemgetter(1))
+
+        # n_tweets_with_zero = 0
+        # tweet_data_rows = []
+        # for tweet in tweets:
+        #     words = tweet.get_words()
+        #     r = [tweet.id, ]
+        #     hits = 0
+        #     for (word, freq) in sorted_word_freqs:
+        #         if "__" in word:
+        #
+        #
+        #     for word in word_set:
+        #         if word in words:
+        #             r.append(1)
+        #             hits += 1
+        #         else:
+        #             r.append(0)
+        #     for pair in pairs:
+        #         if pair[0] in words and pair[1] in words:
+        #             r.append(1)
+        #             pair_freq_key = pair[0] + '__' + pair[1]
+        #             word_freqs[pair_freq_key] += 1
+        #         else:
+        #             r.append(0)
+        #     if hits != 0:
+        #         tweet_data_rows.append(r)
+        #     else:
+        #         n_tweets_with_zero += 1
+        # print("Discarded %d tweets because freq on our selection is 0" % n_tweets_with_zero)
+
+        # Show graph
+        fig, ax = plt.subplots()
+        xss = [i for i in range(1, len(sorted_word_freqs)+1)]
+        rects = ax.bar(
+            xss,
+            [freq / n_tweets for (word, freq) in sorted_word_freqs]
+        )
+        ax.set_xticks([xs + 0.8 for xs in xss])
+        ax.set_xticklabels([word for (word, freq) in sorted_word_freqs], rotation=80)
+        plt.show()
+
+        # Print to dropbox
+        data = []
+        data.append([''] + [key for (key, freq) in sorted_word_freqs])
+        data.append([''] + [str(freq / n_tweets).replace('.', ',') for (key, freq) in sorted_word_freqs])
+        # for tweet_row in tweet_data_rows:
+        #     data.append(tweet_row)
+
+        with open(DROPBOX + 'tmp/word_freq2.csv', 'w') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=";")
-            for row in word_freqs:
+            for row in data:
                 csvwriter.writerow(row)
         print("done")
         return
