@@ -6,29 +6,40 @@ from config.config import TWEETS_HOMEDIR
 from extract_tweets.models import Tweet
 
 
-def get_tweets(n=None, offset=0, dir='elections-29-09-raw', filestart='xa'):
+def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTweet', filename_start='xa'):
     """
     TODO; to be determined what data set later on
-    :param n: Ending file
-    :param offset: Starting file
+    :param tweets_n: number of tweets in total limit
+    :param offset: Starting file index
+    :param file_n: Ending file index
     :param dir:
-    :return: Tweet
+    :return: Tweet[]
     """
     i = 0  # Filecounter
     start = time.time()
     tweets = []
     abs_dir = os.path.join(TWEETS_HOMEDIR, dir)
-    for tweetfilename in os.listdir(abs_dir):
-        if tweetfilename[0:len(filestart)] == filestart:
-            if i < offset:
-                continue
-            file_tweets = convert_tweets(os.path.join(abs_dir, tweetfilename))
-            tweets += file_tweets
-            if n is not None and i == n:
-                break
-            i += 1
+
+    for dp, dn, fn in os.walk(abs_dir):
+        for tweet_filename in fn:
+            if tweet_filename[0:len(filename_start)] == filename_start:
+                if i < file_offset:
+                    continue
+                filename = os.path.join(dp, tweet_filename)
+                print("Reading in from %s" % filename)
+                file_tweets = convert_tweets(filename)
+                if tweets_n is not None and len(tweets) + len(file_tweets) > tweets_n:
+                    tweets += file_tweets[0:tweets_n - len(tweets)]
+                    break
+                tweets += file_tweets
+                if file_n is not None and i == file_n:
+                    break
+                i += 1
     end = time.time()
-    print("%s tweet files read: %.2f sec per file (total %.0f seconds)" % (i, (end - start) / i, end - start))
+    if i == 0:
+        print("\nNo files found!")
+    else:
+        print("%s tweet files read: %.2f sec per file (total %.0f seconds)" % (i, (end - start) / i, end - start))
     return tweets
 
 
