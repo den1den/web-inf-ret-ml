@@ -63,7 +63,6 @@ def strip_text(raw_text):
 
 def extract_keywords(full_text, stop_list = None):
     """
-
     :param full_text: The full text of a tweet
     :return: The keywords in the tweet
     """
@@ -75,7 +74,7 @@ def extract_keywords(full_text, stop_list = None):
         # stop word retweet
         stop_list.append('rt')
 
-    raw_words = full_text.split()
+    raw_words = set(full_text.split())
     for word in raw_words:
         raw_words.remove(word) if word in stop_list else None
 
