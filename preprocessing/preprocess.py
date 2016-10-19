@@ -1,20 +1,16 @@
 import re
 
-def preprocess_tweet(plain_tweets):
-    """ Preprocesses the tweets for feature extraction
+def preprocess_tweet(plain_tweet):
+    """ Preprocesses a tweets for feature extraction
 
     :param plain_tweets: tweets in json format
     :return: tweets preprocessed
     """
-
-    for tweet in plain_tweets:
-        print(tweet)
-        tweet['real_text'] = tweet['text']
-        tweet['text'] = strip_text(tweet['text'])
-        tweet['keywords'] = extract_keywords(tweet['text'])
-
-
-    return plain_tweets
+    tweet = plain_tweet
+    tweet['real_text'] = tweet['text']
+    tweet['text'] = strip_text(tweet['text'])
+    tweet['keywords'] = extract_keywords(tweet['text'])
+    return tweet
 
 
 def give_unique_ids(tweets):
@@ -75,7 +71,7 @@ def extract_keywords(full_text, stop_list = None):
         stop_list.append('rt')
 
     raw_words = set(full_text.split())
-    for word in raw_words:
+    for word in set(raw_words):
         raw_words.remove(word) if word in stop_list else None
 
     return raw_words

@@ -1,40 +1,43 @@
 import csv
-import os
-import time
 from unittest import TestCase
 
-from config.config import TWEETS_HOMEDIR, DROPBOX
-from extract_tweets.convert_tweet import convert_tweets, get_tweets
+from config.config import DROPBOX
+from extract_tweets.convert_tweet import get_tweets
 from features import simple, similarity
 
 
 class TestScanConversations(TestCase):
     def test_scan_conversations(self):
-        tweets_dir = TWEETS_HOMEDIR + 'elections-28-09-raw'
-        t0 = time.time()
-        i = 0
-        n = 0
-        cons = {}
-        cons_n = 0
-        for tweetfilename in os.listdir(tweets_dir):
-            i += 1
-            tweets = convert_tweets(os.path.join(tweets_dir, tweetfilename))
-            if tweets is None:
-                continue
-            n += len(tweets)
-            (cons, cons_n) = simple.scan_conversations(cons, cons_n, tweets)
-            print("Conversations per tweet: %0.3f" % (cons_n / n,))
-            if time.time() - t0 > 120:
-                print("Out of time! %s / %s files processed" % (i, len(os.listdir(TWEETS_HOMEDIR)),))
-                break
+        tweets = get_tweets()
+        tweets_n = len(tweets)
+
+        tweet_to_conv = {}
+        conv_i = 0
+        (tweet_to_conv, conv_i) = simple.scan_conversations(tweet_to_conv, conv_i, tweets)
+        conv_ids = set(tweet_to_conv.values())
+        conv_n = len(conv_ids)
+
+        conv_to_tweet = {}
+        for (tweet_id, con_id) in tweet_to_conv.items():
+            if con_id not in conv_to_tweet:
+                conv_to_tweet[con_id] = {tweet_id}
+            elif tweet_id in conv_to_tweet[con_id]:
+                raise AssertionError("tweet_id is double")
+            else:
+                conv_to_tweet[con_id].add(tweet_id)
+
+        conv_sizes = [len(tweet_set) for (con, tweet_set) in conv_to_tweet.items()]
+        avg_size = sum(conv_sizes) / len(conv_sizes)
+        print("%d conversations found, with avg size of %0.3f" % (conv_n, avg_size))
+        print("%.2f%% unique tweets?" % (100 * (conv_n * avg_size / tweets_n),))
 
         with open(DROPBOX + 'tmp/conversations_test.csv', 'w') as csvfile:
             csvwriter = csv.writer(csvfile)
-            for (tweet, con_id) in cons.items():
+            for (tweet, con_id) in tweet_to_conv.items():
                 csvwriter.writerow([tweet, con_id])
         print("done")
 
-    def test_unique_ids_with_printing(self, print_tweets=True):
+    def test_unique_ids_with_printing(self, print_tweets=False):
         """This also prints every tweet twice"""
         # 55 a
         # 55 b
@@ -44,7 +47,7 @@ class TestScanConversations(TestCase):
         # 67 c
         # 99 g
 
-        tweets = get_tweets()
+        tweets = get_tweets(34974)
 
         ids = set()
         id_printed = set()
@@ -84,7 +87,7 @@ class TestScanConversations(TestCase):
             else:
                 ids.add(tweets[i].id)
 
-            if i % 1000 == 0:
+            if i % (1 << 10) == 0:
                 print("%s / %s" % (i, len(tweets)))
 
         print("duplicate_indices: %s, same_index_diff_text: %s, tweets: %s"

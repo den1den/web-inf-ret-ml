@@ -2,7 +2,26 @@ import numpy
 import scipy
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-verbosity = 2
+
+def get_word_set(tweets):
+    word_set = set()
+    for tweet in tweets:
+        word_set = word_set.union(tweet.get_keywords())
+    return word_set
+
+
+def get_word_freqs(tweets, word_set=None, normalized=False):
+    word_set = get_word_set(tweets) if word_set is None else word_set
+    word_freqs = {word: 0 for word in word_set}
+    for tweet in tweets:
+        for word in tweet.get_keywords():
+            word_freqs[word] += 1
+    if normalized:
+        max = max(word_freqs.values())
+        for word in word_freqs:
+            word_freqs[word] /= max
+    # Sorting: sorted_word_freqs = sorted(word_freqs.items(), key=operator.itemgetter(1))
+    return word_freqs
 
 
 def similarity_strings(string1, string2):
@@ -24,16 +43,16 @@ def sp_permute(A, perm_r, perm_c):
     return Pr.T * A * Pc.T
 
 
-def similarity_tf(strings):
+def similarity_tf_(*strings):
+    return similarity_tf(strings)
+
+
+def similarity_tf(string_array):
     """
-    :param strings: array of all the string that needs top be compared
-    :return:
+    :param numpy.array strings: of all the string that needs to be compared
+    :rtype: scipy.sparse.csr.csr_matrix
     """
-    # onestirng = ""
-    # for s in strings:
-    #     onestirng += str(s) + "\n"
-    # print(onestirng, file=open(PROJECT_DIR+'tmp.txt', mode='w'))
-    tfidf = TfidfVectorizer().fit_transform(strings)
+    tfidf = TfidfVectorizer().fit_transform(string_array)
     # no need to normalize, since Vectorizer will return normalized tf-idf
     pairwise_similarity = tfidf * tfidf.T
     return pairwise_similarity

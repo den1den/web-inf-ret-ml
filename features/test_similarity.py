@@ -3,18 +3,14 @@ import json
 import operator
 import time
 from unittest import TestCase
+
+from matplotlib import pyplot as plt
 from scipy.sparse.csgraph import reverse_cuthill_mckee
-from features.similarity import similarity_strings, similarity_tf
+
 from config.config import PROJECT_DIR, DROPBOX
 from extract_tweets.convert_tweet import get_tweets
 from extract_tweets.imaging import plot_and_show_matrix
-from matplotlib import pyplot as plt
-
-with open(PROJECT_DIR + "test_news/tc1.json", encoding="utf8") as fp:
-    data = json.load(fp)
-
-with open(PROJECT_DIR + "test_tweets/100-elections.json") as fp:
-    data2 = json.load(fp)
+from features.similarity import similarity_strings, similarity_tf
 
 
 class TestCase2(TestCase):
@@ -54,13 +50,19 @@ class TestCase2(TestCase):
 
         # Make pairs from `word_set`
         pairs = set()
+        pairs3 = set()
         word_set_arr = list(word_set)
         for word1 in word_set_arr:
             i = word_set_arr.index(word1)
             for word2 in word_set_arr[i+1:len(word_set_arr)]:
                 pairs.add((word1, word2))
                 pair_freq_key = word1 + '__' + word2
+                j = word_set_arr.index(word2)
                 word_freqs[pair_freq_key] = 0
+                for word3 in word_set_arr[j + 1:len(word_set_arr)]:
+                    pairs3.add((word1, word2, word3))
+                    pair_freq_key = word1 + '__' + word2 + '__' + word3
+                    word_freqs[pair_freq_key] = 0
         print("Initialized %d word pairs" % len(pairs))
 
         for tweet in tweets:
@@ -68,6 +70,10 @@ class TestCase2(TestCase):
             for pair in pairs:
                 if pair[0] in words and pair[1] in words:
                     pair_freq_key = pair[0] + '__' + pair[1]
+                    word_freqs[pair_freq_key] += 1
+            for pair in pairs3:
+                if pair[0] in words and pair[1] in words and pair[2] in words:
+                    pair_freq_key = pair[0] + '__' + pair[1] + '__' + pair[2]
                     word_freqs[pair_freq_key] += 1
         print("Set F for all pairs")
 
@@ -157,32 +163,36 @@ class GeneralTestCase(TestCase):
 
 
 class TestCase1(TestCase):
+    def setUp(self):
+        with open(PROJECT_DIR + "test_news/tc1.json", encoding="utf8") as fp:
+            self.data = json.load(fp)
+        with open(PROJECT_DIR + "test_tweets/100-elections.json") as fp:
+            self.data2 = json.load(fp)
+
     def test_similarity_news(self):
-        titles = [article['title'] for article in data]
-        bodies = [article['body'] for article in data]
-        assert similarity_strings(data[0]['title'], data[1]['title']) == 0
-        title_sa = similarity_tf(*titles).toarray()
+        titles = [article['title'] for article in self.data]
+        bodies = [article['body'] for article in self.data]
+        assert similarity_strings(self.data[0]['title'], self.data[1]['title']) == 0
+        title_sa = similarity_tf(titles).toarray()
         assert title_sa[0][1] > title_sa[0][2]  # Article 1 is more similar to 2 then to 3
         assert title_sa[0][1] > title_sa[1][2]  # Article 2 is more similar to 1 then to 3
         assert title_sa[0][2] <= 0.1  # Article 3 is not very similar to 1
         assert title_sa[1][2] <= 0.1  # Article 3 is not very similar to 2
         assert title_sa[0][1] >= 0.1  # Article 1 and 2 are quite similar
 
-        body_sa = similarity_tf(*bodies).toarray()
+        body_sa = similarity_tf(bodies).toarray()
         assert body_sa[0][1] > body_sa[0][2]  # Article 1 is more similar to 2 then to 3
         assert body_sa[0][1] > body_sa[1][2]  # Article 2 is more similar to 1 then to 3
 
-        body_title_sa = similarity_tf(*(titles + bodies)).toarray()
+        body_title_sa = similarity_tf(titles + bodies).toarray()
         # Title article X is more similar to body article X then bodies of diff articles
         assert body_title_sa[0][3] > body_title_sa[0][4] and body_title_sa[0][3] > body_title_sa[0][5]
         assert body_title_sa[2][5] > body_title_sa[2][3] and body_title_sa[2][5] > body_title_sa[2][4]
         # Except for article 2, that is more similar to body of article 1 then body of article 2
 
-
-class TestCaseTweets(TestCase):
     def test_100_tweets(self):
-        texts = [tweet['text'] for tweet in data2]
-        tweets_sim = similarity_tf(*texts)
+        texts = [tweet['text'] for tweet in self.data2]
+        tweets_sim = similarity_tf(texts)
         minbandwidth_perm = reverse_cuthill_mckee(tweets_sim, True)
         # Could use more efficient matricx prepresenation
         tweets_sim_cuthillmckee = [[(0 if x == y else tweets_sim[x, y]) for y in minbandwidth_perm] for x in

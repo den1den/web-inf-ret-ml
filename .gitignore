@@ -93,3 +93,4 @@ ENV/
 .gitignore
 .idea/
 /config/config.py
+elections.json

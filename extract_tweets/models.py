@@ -27,9 +27,9 @@ class Tweet(dict):
         return [h['text'] for h in self['entities']['hashtags']]
 
     def get_retweet_id(self):
-        if "retweeted_status" not in self:
+        if "retweet_id" not in self:
             return None
-        return self["retweeted_status"]['id'] or None
+        return self["retweet_id"] or None
 
     def get_words(self):
         return [word.lower() for word in re.split('\s+', self.get_txt())]

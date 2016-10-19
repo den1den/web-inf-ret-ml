@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 
 def plot_and_show_matrix(numpy_2d_array, treshhold=0.7):
     t0 = time.time()
-    arr = numpy_2d_array.toarray()
+    arr = numpy_2d_array#.toarray()
     rowI = 0
     for row in arr:
         colI = 0

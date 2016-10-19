@@ -16,46 +16,64 @@ def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTwee
     :param dir:
     :return: Tweet[]
     """
-    i = 0  # Filecounter
-    start = time.time()
+    filecounter = 0  # Filecounter
     tweets = []
     abs_dir = os.path.join(TWEETS_HOMEDIR, dir)
 
+    # Start walking the filesystem
+    t0 = time.time()
     for dp, dn, fn in os.walk(abs_dir):
         for tweet_filename in fn:
             if tweet_filename[0:len(filename_start)] == filename_start:
-                if i < file_offset:
+                if filecounter < file_offset:
                     continue
                 filename = os.path.join(dp, tweet_filename)
                 file_tweets = convert_tweets(filename)
+                filecounter += 1
                 if tweets_n is not None and len(tweets) + len(file_tweets) > tweets_n:
                     tweets += file_tweets[0:tweets_n - len(tweets)]
                     break
                 tweets += file_tweets
-                if file_n is not None and i == file_n:
+                if file_n is not None and filecounter == file_n:
                     break
-                i += 1
-    end = time.time()
+    t1 = time.time()
 
     # Gives the tweets unique IDs
     pp.give_unique_ids(tweets)
 
-    if i == 0:
-        print("\nNo files found!")
-    else:
-        print("%s tweet files read: %.2f sec per file (total %.0f seconds)" % (i, (end - start) / i, end - start))
+    if tweets_n is not None and len(tweets) != tweets_n:
+        raise AssertionError("Input error: Could only read %d of %d tweets" % (len(tweets) or 0, tweets_n))
+
+    if filecounter == 0:
+        raise IOError("Input error: No files read!")
+
+    duration = t1 - t0
+    print("Input ok: %d tweets read from %d files (%.2f sec per file, %.0f seconds in total)\n" % (len(tweets), filecounter, duration / filecounter, duration))
     return tweets
 
 
+def get_tweets_dict(tweets):
+    return {tweet.id: tweet for tweet in tweets}
+
+
+def to_tweet(plain_data):
+    return Tweet(pp.preprocess_tweet(plain_data))
+
+
 def convert_tweets(filename):
-    try:
-        with open(filename, encoding='utf8') as data_file:
-            plain_objects = json.load(data_file)  # Depr: object_hook=lambda d: Tweet(**d)
-            preprocessed_objects = pp.preprocess_tweet(plain_objects)
-            return [Tweet(preprocessed_object) for preprocessed_object in preprocessed_objects]
-    except Exception as e:
-        print("Could not parse tweet %s %s" % (filename, e))
-    return None
+    """"Reads from filename to an array of tweets"""
+    tweets = []
+    with open(filename, encoding='utf8') as data_file:
+        plain_objects = json.load(data_file)  # Depr: object_hook=lambda d: Tweet(**d)
+    print("Input file JSON parsed: %s" % filename)
+    for plain_object in plain_objects:
+        try:
+            tweets.append(Tweet(pp.preprocess_tweet(plain_object)))
+        except Exception as e:
+            print("Could not parse tweet from file: %s" % (filename))
+            print("Plain tweet data: %s" % (plain_object))
+            raise e
+    return tweets
 
 
 if __name__ == "__main__":
