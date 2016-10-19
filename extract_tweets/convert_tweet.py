@@ -4,13 +4,14 @@ import time
 
 from config.config import TWEETS_HOMEDIR
 from extract_tweets.models import Tweet
+from preprocessing import preprocess as pp
 
 
 def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTweet', filename_start='xa'):
     """
     TODO; to be determined what data set later on
     :param tweets_n: number of tweets in total limit
-    :param offset: Starting file index
+    :param file_offset: Starting file index
     :param file_n: Ending file index
     :param dir:
     :return: Tweet[]
@@ -26,7 +27,6 @@ def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTwee
                 if i < file_offset:
                     continue
                 filename = os.path.join(dp, tweet_filename)
-                print("Reading in from %s" % filename)
                 file_tweets = convert_tweets(filename)
                 if tweets_n is not None and len(tweets) + len(file_tweets) > tweets_n:
                     tweets += file_tweets[0:tweets_n - len(tweets)]
@@ -36,6 +36,10 @@ def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTwee
                     break
                 i += 1
     end = time.time()
+
+    # Gives the tweets unique IDs
+    pp.give_unique_ids(tweets)
+
     if i == 0:
         print("\nNo files found!")
     else:
@@ -47,7 +51,8 @@ def convert_tweets(filename):
     try:
         with open(filename, encoding='utf8') as data_file:
             plain_objects = json.load(data_file)  # Depr: object_hook=lambda d: Tweet(**d)
-            return [Tweet(plain_object) for plain_object in plain_objects]
+            preprocessed_objects = pp.preprocess_tweet(plain_objects)
+            return [Tweet(preprocessed_object) for preprocessed_object in preprocessed_objects]
     except Exception as e:
         print("Could not parse tweet %s %s" % (filename, e))
     return None
