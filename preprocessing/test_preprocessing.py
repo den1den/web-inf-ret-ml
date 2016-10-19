@@ -5,7 +5,7 @@ from extract_tweets.convert_tweet import get_tweets
 
 class TestPreprocessing(TestCase):
 
-    def test_preprocessing_tweet(self):
+    def test_unique_id(self):
         N = 5000
         tweets = get_tweets()[0:N]
         unique_IDs = []
@@ -15,3 +15,15 @@ class TestPreprocessing(TestCase):
                 raise Exception("Multiple tweets with id %i" % tweet.id)
             else:
                 unique_IDs.append(tweet.id)
+
+    def test_keywords(self):
+        N = 10
+        tweets = get_tweets()[0:N]
+        for tweet in tweets:
+            print(tweet.keywords)
+
+    def test_striptext(self):
+        N = 10
+        tweets = get_tweets()[0:N]
+        for tweet in tweets:
+            print(tweet)

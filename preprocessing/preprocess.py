@@ -1,6 +1,4 @@
-# import preprocessing.rake as pr
-from extract_tweets.models import Tweet
-
+import re
 
 def preprocess_tweet(plain_tweets):
     """ Preprocesses the tweets for feature extraction
@@ -8,6 +6,10 @@ def preprocess_tweet(plain_tweets):
     :param plain_tweets: tweets in json format
     :return: tweets preprocessed
     """
+
+    for tweet in plain_tweets:
+        tweet['text'] = strip_text(tweet['text'])
+        tweet['keywords'] = extract_keywords(tweet['text'])
 
     return plain_tweets
 
@@ -40,13 +42,20 @@ def give_unique_ids(tweets):
 
     return tweets
 
-def extract_words(full_text):
+
+def strip_text(full_text):
+    """ Strip the full_text to base
+
+    :param full_text:
+    :return: A stripped full text
+    """
+
+    return re.sub("[^\w]", " ", full_text)
+
+def extract_keywords(full_text):
     """
 
     :param full_text: The full text of a tweet
     :return: The keywords in the tweet
     """
-
-    keywords = pr.Rake(full_text, 3, 5, 1)
-
-    return keywords
+    return re.sub("[^\w]", " ", full_text).split()
