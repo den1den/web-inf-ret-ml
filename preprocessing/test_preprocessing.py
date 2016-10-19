@@ -1,11 +1,15 @@
 from unittest import TestCase
 from extract_tweets.convert_tweet import get_tweets
-
+from preprocessing.preprocess import strip_text
 
 
 class TestPreprocessing(TestCase):
 
     def test_unique_id(self):
+        """ Tests if the IDs are all unique
+
+        :return:
+        """
         N = 5000
         tweets = get_tweets()[0:N]
         unique_IDs = []
@@ -16,14 +20,25 @@ class TestPreprocessing(TestCase):
             else:
                 unique_IDs.append(tweet.id)
 
-    def test_keywords(self):
-        N = 10
-        tweets = get_tweets()[0:N]
-        for tweet in tweets:
-            print(tweet.keywords)
+    def test_strip_text(self):
+        """ Test example for stripping text
 
-    def test_striptext(self):
-        N = 10
-        tweets = get_tweets()[0:N]
+        :return:
+        """
+        N = 100
+        tweets = get_tweets(N)
         for tweet in tweets:
-            print(tweet)
+            print(tweet.get_real_text())
+            print(str(tweet))
+
+    def test_keywords(self):
+        """ Test example for the keywords
+
+        :return:
+        """
+        N = 10
+        tweets = get_tweets(10)
+        for tweet in tweets:
+            print(str(tweet))
+            print(tweet.get_keywords())
+

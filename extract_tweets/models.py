@@ -20,6 +20,9 @@ class Tweet(dict):
     def get_txt(self):
         return self['fulltext'] if 'fulltext' in self else self['text']
 
+    def get_real_text(self):
+        return self['real_text'] if 'real_text' in self else self['text']
+
     def get_hashtags(self):
         return [h['text'] for h in self['entities']['hashtags']]
 
@@ -30,3 +33,6 @@ class Tweet(dict):
 
     def get_words(self):
         return [word.lower() for word in re.split('\s+', self.get_txt())]
+
+    def get_keywords(self):
+        return self['keywords'] if 'keywords' in self else None
