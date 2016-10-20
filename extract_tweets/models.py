@@ -17,6 +17,9 @@ class Tweet(dict):
         # equals can be faster?
         return super().__eq__(*args, **kwargs)
 
+    def get_small_txt(self):
+        return re.sub('\s+', ' ', self.get_txt())
+
     def get_txt(self):
         return self['fulltext'] if 'fulltext' in self else self['text']
 

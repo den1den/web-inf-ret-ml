@@ -6,39 +6,60 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from extract_tweets.convert_tweet import get_tweets, get_tweets_dict
-from features.similarity import get_word_set, get_word_freqs
+from extract_tweets.convert_tweet import get_tweets
+from features.similarity import get_word_set
 
 
 class TestHierarchicalClustering(TestCase):
-    def test_hc_tf(self):
-        #FIXME: check this
-        """Test hierarchical clustering by term frequency"""
-        N = 10
-        tweets = get_tweets(N)
+    def do_hc_tf(self, tweets):
+        N = len(tweets)
         total_word_set = get_word_set(tweets)
         total_word_list = list(total_word_set)
+        print("Word list of %d created of %d tweets" % (len(total_word_set), N))
 
         # Set the input array
         tweet_present_data_type = 'b1'
-        #For integer presence tweet_present_data_type = 'i2'
-        dtype=[('tweet_id', 'uint64'), ] + [(word, tweet_present_data_type) for word in total_word_list]
-        X = np.zeros(shape=N, dtype=dtype) # Could also use `np.array` to not first fill with 0
+        # For integer presence tweet_present_data_type = 'i2'
+        X = np.zeros(shape=(N, len(total_word_list)),
+                     dtype=tweet_present_data_type)  # Could also use `np.array` to not first fill with 0
         i = 0
         for tweet in tweets:
-            X[i]['tweet_id'] = tweet.id
-            for word in total_word_list:
-                X[i][word] = word in tweet.get_words()
+            tweet_word_list = tweet.get_keywords()
+            X[i] = np.array([word in tweet_word_list for word in total_word_list])
             i += 1
 
         t0 = time.time()
         print("starting on calculation of linkage")
-        Z = linkage(X)
+        Z = linkage(X, method='ward')
         print("linkage took %.1f seconds" % (time.time() - t0))
+        tweets_is = set()
+        for z in Z:
+            if 0.01 < z[2] < 3:
+                if z[0] <= N:
+                    tweets_is.add(z[0])
+                if z[1] <= N:
+                    tweets_is.add(z[1])
 
-        tweet_idmap = get_tweets_dict(tweets)
-        X_labels = [str(tweet_idmap[x['tweet_id']]) for x in X]
+        X_labels = [str(tweet.get_real_text()) for tweet in tweets]
         self.plot_z(X_labels, Z)
+
+        i = 0
+        tweets2 = []
+        for tweet in tweets:
+            if i in tweets_is:
+                tweets2.append(tweet)
+            i += 1
+        return tweets2
+
+    def test_hc_tf(self):
+        """Test hierarchical clustering by term frequency"""
+        N = 450  # takes ~40 seconds for N = 3000
+        plt.ion()
+        tweets = get_tweets(N)
+        tweets = self.do_hc_tf(tweets)
+        plt.ioff()
+        tweets = self.do_hc_tf(tweets)
+
 
     def test_hc_tfid(self):
         """Test hierarchical clustering by tfid vectorized (very slow)"""
@@ -93,13 +114,16 @@ class TestHierarchicalClustering(TestCase):
     def test_linkage_2d(self):
         # generate two clusters: a with 100 points, b with 50:
         np.random.seed(4711)  # for repeatability of this tutorial
-        a = np.random.multivariate_normal([10, 0], [[3, 1], [1, 4]], size=[100, ])
-        b = np.random.multivariate_normal([0, 20], [[3, 1], [1, 4]], size=[50, ])
+        a = np.random.multivariate_normal([10, 0], [[3, 1], [1, 4]], size=[3, ])
+        b = np.random.multivariate_normal([0, 20], [[3, 1], [1, 4]], size=[5, ])
         X = np.concatenate((a, b), )
-        print(X.shape)  # 150 samples with 2 dimensions
+        print(X.shape)  # 150 samples with 2 dimensions, thus returns 150, 2
         plt.scatter(X[:, 0], X[:, 1])
 
         # plt.show()
         # generate the linkage matrix
-        Z = linkage(X, 'ward')
+        Z = linkage(X)
+
+        print(Z)
+
         self.plot_z(X, Z)
