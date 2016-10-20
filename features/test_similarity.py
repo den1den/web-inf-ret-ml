@@ -133,8 +133,11 @@ class TestCase2(TestCase):
         print("done")
         return
 
+    def test_cuthill(self):
+        tweets = get_tweets(450)
+
         matrix = similarity_tf([tweet.get_txt() for tweet in tweets])
-        matrix[matrix > 0.33] = 0
+        # matrix[matrix > 0.33] = 0
 
         print("Starting on McKee")
         t0 = time.time()
@@ -146,13 +149,8 @@ class TestCase2(TestCase):
         matrix = matrix[cuthill_mckee_perm, :]
         t2 = time.time()
         print("Cuthill mckee permutation in %.2f seconds, conversion %.2f seconds" % (t1 - t0, t2 - t1))
-        # for i in cuthill_mckee_perm[range(674, 734)]:
-        # for i in cuthill_mckee_perm[range(701, 733)]:
-        for i in cuthill_mckee_perm[range(1660, 1822)]:
-            print(str(tweets[i]))
-        return
         # rev_perm = cuthill_mckee_perm[cuthill_mckee_perm]
-        plot_and_show_matrix(matrix)
+        plot_and_show_matrix(matrix.toarray())
 
 
 class GeneralTestCase(TestCase):
