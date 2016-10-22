@@ -1,5 +1,6 @@
 from unittest import TestCase
-from extract_tweets.convert_tweet import get_tweets
+
+from inputoutput.input import get_tweets
 from preprocessing.preprocess import strip_text
 
 
@@ -11,7 +12,7 @@ class TestPreprocessing(TestCase):
         :return:
         """
         N = 5000
-        tweets = get_tweets()[0:N]
+        tweets = get_tweets(N)
         unique_IDs = []
         for tweet in tweets:
             if tweet.id in unique_IDs:

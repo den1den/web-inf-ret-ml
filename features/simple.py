@@ -1,4 +1,4 @@
-from extract_tweets.models import Tweet
+from models.tweet import Tweet
 
 
 def scan_conversations_start(tweets):

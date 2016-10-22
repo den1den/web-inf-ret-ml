@@ -8,15 +8,15 @@ from matplotlib import pyplot as plt
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 
 from config.config import PROJECT_DIR, DROPBOX
-from extract_tweets.convert_tweet import get_tweets
-from extract_tweets.imaging import plot_and_show_matrix
 from features.similarity import similarity_strings, similarity_tf
+from inputoutput.imaging import plot_and_show_matrix
+from inputoutput.input import get_tweets
 
 
 class TestCase2(TestCase):
     def test_sim(self):
         N = 50000-39601
-        tweets = get_tweets()[0:N]
+        tweets = get_tweets(N)
         n_tweets = len(tweets)
         if n_tweets < N:
             raise Exception("To few files selected, missing %d" % (N - n_tweets))

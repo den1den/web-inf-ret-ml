@@ -4,7 +4,7 @@ import re
 class Tweet(dict):
     def __init__(self, iterable=None, **kwargs):
         super().__init__(iterable, **kwargs)
-        self.id = self['id']
+        self.id = int(self['id'])
 
     def __str__(self, *args, **kwargs):
        return self['text']

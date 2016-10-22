@@ -2,8 +2,8 @@ import csv
 from unittest import TestCase
 
 from config.config import DROPBOX
-from extract_tweets.convert_tweet import get_tweets
-from features import simple, similarity
+from features import simple
+from inputoutput.input import get_tweets
 
 
 class TestScanConversations(TestCase):

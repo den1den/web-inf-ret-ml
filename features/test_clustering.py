@@ -6,8 +6,8 @@ import numpy as np
 from scipy.cluster.hierarchy import linkage, dendrogram
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from extract_tweets.convert_tweet import get_tweets
 from features.similarity import get_word_set
+from inputoutput.input import get_tweets
 
 
 class TestHierarchicalClustering(TestCase):
