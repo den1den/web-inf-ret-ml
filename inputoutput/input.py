@@ -3,6 +3,7 @@ import os
 import time
 
 from config.config import TWEETS_HOMEDIR
+from models.tuser import TUser
 from models.tweet import Tweet
 from preprocessing import preprocess as pp
 
@@ -17,6 +18,18 @@ def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTwee
 
 def to_tweet(plain_data):
     return Tweet(pp.preprocess_tweet(plain_data))
+
+
+def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser', filename_prefix='xa'):
+    """
+    Read in twitter user accounts from files
+    see input.read_json_array_from_files()
+    """
+    return read_json_array_from_files(to_tuser, "tusers", users_n, file_n, file_offset, dir, filename_prefix)
+
+
+def to_tuser(plain_data):
+    return TUser(plain_data)
 
 
 #
