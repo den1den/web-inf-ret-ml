@@ -25,6 +25,7 @@ class TestTweetsInput(TestCase):
         duplicate_indices = 0
         same_index_diff_text = 0
 
+        sys.stdout.flush()
         for i in range(0, len(data_array)):
             assert hasattr(data_array[i], 'id'), "No ID is set on this object, so no id to check!"
             data_id = data_array[i].id
