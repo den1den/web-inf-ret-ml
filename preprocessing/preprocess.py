@@ -20,7 +20,7 @@ def give_unique_ids(tweets):
     :return: list of tweets with unique ids
     """
 
-    unique_IDs = []
+    unique_IDs = set()
     new_ID = 1
 
     # Makes the tweet ID's positive and checks whether the ID already exists.
@@ -35,9 +35,9 @@ def give_unique_ids(tweets):
             while new_ID in unique_IDs:
                 new_ID += 1
             tweet.id = new_ID
-            unique_IDs.append(new_ID)
+            unique_IDs.add(new_ID)
         else:
-            unique_IDs.append(tweet_ID)
+            unique_IDs.add(tweet_ID)
 
     return tweets
 
