@@ -4,6 +4,7 @@ import os
 
 if not os.path.exists('json-out'):
     os.makedirs('json-out')
+
 for file in os.listdir("."):
     if file[0:1] == "x":
         with open(file) as f:
