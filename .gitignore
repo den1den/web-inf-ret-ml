@@ -94,3 +94,5 @@ ENV/
 .idea/
 /config/config.py
 elections.json
+
+*.bak
