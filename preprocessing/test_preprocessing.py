@@ -1,6 +1,6 @@
 from unittest import TestCase
 
-from inputoutput.input import get_tweets
+from inputoutput.input import get_tweets, get_articles
 from preprocessing.preprocess import strip_text
 
 
@@ -42,4 +42,17 @@ class TestPreprocessing(TestCase):
         for tweet in tweets:
             print(str(tweet))
             print(tweet.get_keywords())
+
+    def test_article_preprocessing(self):
+        """ Tests if the articles are correctly pre-processed
+
+        ":return: Returns whether the test worked or not
+        """
+
+        N = 10
+        articles = get_articles(10)
+        for article in articles:
+            print(article['Description'])
+            print(article['real_Description'])
+
 

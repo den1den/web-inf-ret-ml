@@ -5,6 +5,7 @@ import time
 from config.config import TWEETS_HOMEDIR
 from models.tuser import TUser
 from models.tweet import Tweet
+from models.article import Article
 from preprocessing import preprocess as pp
 
 
@@ -20,7 +21,7 @@ def to_tweet(plain_data):
     return Tweet(pp.preprocess_tweet(plain_data))
 
 
-def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser', filename_prefix='xa'):
+def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessUser', filename_prefix='xa'):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
@@ -31,6 +32,17 @@ def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser'
 def to_tuser(plain_data):
     return TUser(plain_data)
 
+
+def get_articles(articles_n=None, file_n=None, file_offset=0, dir='PreprocessingRSS', filename_prefix='2016100'):
+    """
+    Read in twitter user accounts from files
+    see input.read_json_array_from_files()
+    """
+    return read_json_array_from_files(to_article, "RSSArticles", articles_n, file_n, file_offset, dir, filename_prefix)
+
+
+def to_article(plain_data):
+    return Article(pp.preprocess_article(plain_data))
 
 #
 # Default IO util functions

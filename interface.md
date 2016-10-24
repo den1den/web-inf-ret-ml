@@ -21,7 +21,7 @@ Output of the preprocessing from the articles, written to a seperate json file
 - `description:string`: A discription of the article (RAW for now)
 - `published_date:int`: When the article was published (as a unix timestamp)
 - `title:string`: Title of the article (RAW)
-- `author_id:int`: unique id for the author of this article
+- `author_id:set(int)`: A set of unique ids for the authors of this article
 - `link:url`: link to the page where this article is shown
 
 ### Article author data

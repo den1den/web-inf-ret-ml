@@ -3,7 +3,7 @@ from unittest import TestCase
 
 import sys
 
-from inputoutput.input import get_tweets, get_tusers
+from inputoutput.input import get_tweets, get_tusers, get_articles
 
 
 class TestTweetsInput(TestCase):
@@ -15,7 +15,11 @@ class TestTweetsInput(TestCase):
         data = get_tusers(10000, filename_prefix='')
         self.unique_ids_test(data)
 
-    def unique_ids_test(self, data_array, print_data=True):
+    def test_unique_get_articles(self):
+        data = get_articles(894)
+        self.unique_ids_test(data, id_tag='ArticleID')
+
+    def unique_ids_test(self, data_array, print_data=True, id_tag='id'):
         format_N = "[%0" + str(math.ceil(math.log(len(data_array) + 1, 10))) + "d]"
         format_str = format_N + " %020d: %s"
 
@@ -27,8 +31,8 @@ class TestTweetsInput(TestCase):
 
         sys.stdout.flush()
         for i in range(0, len(data_array)):
-            assert hasattr(data_array[i], 'id'), "No ID is set on this object, so no id to check!"
-            data_id = data_array[i].id
+            #assert hasattr(data_array[i], id_tag), "No ID is set on this object, so no id to check!"
+            data_id = data_array[i][id_tag]
             if data_id in seen_ids:
                 # Duplicate found
                 if data_id not in id_printed:
@@ -38,18 +42,18 @@ class TestTweetsInput(TestCase):
 
                     # Find first data:
                     for j in range(0, i):
-                        if data_array[j].id == data_id:
+                        if data_array[j][id_tag] == data_id:
                             this_id_n += 1
                             this_id_strings.add(str(data_array[j]))
-                            if print_data: print(format_str % (j, data_array[j].id, data_array[j]))
+                            if print_data: print(format_str % (j, data_array[j][id_tag], data_array[j]))
                             break
                         elif j == i - 1:
                             raise AssertionError("Original not found")
 
-                    # Find all consegutive data's with same data_id, O(n^2)
+                    # Find all consecutive data's with same data_id, O(n^2)
                     for j in range(i, len(data_array)):
-                        if data_array[j].id == data_id:
-                            if print_data: print(format_str % (j, data_array[j].id, data_array[j]))
+                        if data_array[j][id_tag] == data_id:
+                            if print_data: print(format_str % (j, data_array[j][id_tag], data_array[j]))
                             this_id_n += 1
                             this_id_strings.add(str(data_array[j]))
                     if print_data: print("\n----------------------------------------------------------\n")
@@ -59,7 +63,7 @@ class TestTweetsInput(TestCase):
                     duplicate_indices += this_id_n
                     id_printed.add(data_id)
             else:
-                seen_ids.add(data_array[i].id)
+                seen_ids.add(data_array[i][id_tag])
 
             # Displays process halfway:
             # if i % (1 << 10) == 0:
@@ -73,3 +77,8 @@ class TestTweetsInput(TestCase):
         if len(id_printed) >  0:
             print("Actual indices: %s" % id_printed)
             assert False, "%d duplicates found in %d entries" % (duplicate_indices, len(data_array), )
+
+
+
+
+
