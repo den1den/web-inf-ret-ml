@@ -20,7 +20,7 @@ def to_tweet(plain_data):
     return Tweet(pp.preprocess_tweet(plain_data))
 
 
-def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser', filename_prefix='xa'):
+def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessUser', filename_prefix='xa'):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
