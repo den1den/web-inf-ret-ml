@@ -1,7 +1,6 @@
 import math
-from unittest import TestCase
-
 import sys
+from unittest import TestCase
 
 from inputoutput.input import get_tweets, get_tusers, get_articles
 
@@ -12,7 +11,7 @@ class TestTweetsInput(TestCase):
         self.unique_ids_test(data)
 
     def test_unique_tuser_ids(self):
-        data = get_tusers(10000, filename_prefix='')
+        data = get_tusers(filename_prefix='')
         self.unique_ids_test(data)
 
     def test_unique_get_articles(self):
