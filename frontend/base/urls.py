@@ -18,6 +18,11 @@ from django.contrib import admin
 from django.conf import settings
 from django.conf.urls.static import static
 
+from frontend.api.views import ReloadView
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
+
+    url(r'^reload/', ReloadView.as_view()),
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
