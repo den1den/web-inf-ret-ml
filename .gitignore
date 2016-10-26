@@ -96,3 +96,5 @@ ENV/
 elections.json
 
 *.bak
+frontend/runserver.err.log
+frontend/db.sqlite3
