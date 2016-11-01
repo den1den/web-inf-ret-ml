@@ -99,3 +99,6 @@ elections.json
 frontend/runserver.err.log
 frontend/db.sqlite3
 frontend/static_root/
+df_t.json
+idf_t.csv
+idf_t.json
