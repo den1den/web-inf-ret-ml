@@ -7,18 +7,22 @@ import os
 
 from os import listdir
 
-WRITE_OUTPUT = False
+import re
+
+WRITE_OUTPUT = True
 
 skip_dirs = {'elections-03-10-raw', 'elections-28-09-raw', 'elections-29-09-raw'}
 
 DENNIS_LINUX_ROOT_DIR = '/home/dennis/pCloudDrive/tweets/'
 DENNIS_WINDOWS_ROOT_DIR = 'E:\\pCloud\\'
+DENNIS_WINDOWS_OUTPUT_ROOT_DIR = 'E:\\pCloud_buffer\\'
 
 root_dir = os.path.join(DENNIS_WINDOWS_ROOT_DIR, 'Tweet')
 
 tweets_per_file_target = 1000
 buffer = 1 << 25
 buffer = 1 << 22
+
 
 class Processor:
     chunk = ""
@@ -31,6 +35,7 @@ class Processor:
         self.dirpath = dirpath
         self.basefilename, ext = os.path.splitext(filename)
         self.filepath = os.path.join(dirpath, filename)
+        self.output_path = os.path.join(DENNIS_WINDOWS_OUTPUT_ROOT_DIR, os.path.basename(self.dirpath))
 
     def try_find_tweet(self):
         if self.chunk == "":
@@ -61,19 +66,19 @@ class Processor:
         return False
 
     def print_output(self):
-        output_filename = os.path.join(self.dirpath, self.basefilename + "." + str(self.file_index) + '.valid.json')
-        print("Writing %d to file %s" % (len(self.file_array), output_filename))
+        output_filename = self.basefilename + "." + str(self.file_index) + '.valid.json'
+        output_filepath = os.path.join(self.output_path, output_filename)
         if WRITE_OUTPUT:
-            json.dump(self.file_array, open(output_filename, 'w+'), indent=1)
+            if not os.path.exists(self.output_path):
+                os.makedirs(self.output_path)
+            print("Writing %d to file %s" % (len(self.file_array), output_filepath))
+            json.dump(self.file_array, open(output_filepath, 'w+'), indent=1)
         self.file_index += 1
         self.file_array = []
 
     def execute(self):
         print("executing %s" % self.filepath)
-        # Delete previous
-        for f in listdir(self.dirpath):
-            if f.endswith('.valid.json'):
-                os.remove(os.path.join(self.dirpath, f))
+        self.delete_previous()
 
         with open(self.filepath, 'r', encoding='utf8') as fp:
             self.chunk = fp.read(buffer)
@@ -101,18 +106,30 @@ class Processor:
             if len(self.file_array) > 0:
                 self.print_output()
 
+    def delete_previous(self):
+        # Delete previous
+        prefix = self.basefilename + '.'
+        postfix = '.valid.json'
+        r = re.compile(re.escape(prefix) + r'\d+' + re.escape(postfix))
+        for f in listdir(self.dirpath):
+            if r.match(f):
+                print("removing "+os.path.join(self.dirpath, f))
+                os.remove(os.path.join(self.dirpath, f))
+        if os.path.exists(self.output_path):
+            for f in listdir(self.output_path):
+                if r.match(f):
+                    print("removing " + os.path.join(self.output_path, f))
+                    os.remove(os.path.join(self.output_path, f))
+
 
 def main():
     print("Reading from %s" % root_dir)
-    for dp, dn, fn in os.walk(root_dir):
-        for tweet_filename in fn:
-            filepath = os.path.join(dp, tweet_filename)
-            dirname = os.path.basename(os.path.dirname(filepath))
-            if dirname in skip_dirs:
-                # skip
-                continue
-            filename = os.path.basename(filepath)
-            dirpath = os.path.dirname(filepath)
+    for dirpath, dirnames, filenames in os.walk(root_dir):
+        dirname = os.path.basename(dirpath)
+        if dirname in skip_dirs:
+            # skip
+            continue
+        for filename in filenames:
             if filename.endswith('.valid.json'):
                 continue
             Processor(dirpath, filename).execute()
