@@ -9,10 +9,11 @@ from models.article import Article
 from preprocessing import preprocess as pp
 
 
-def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTweet', filename_prefix='xa'):
+def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTweet', filename_prefix=''):
     """
     Read in tweets from files
     see input.read_json_array_from_files()
+    :rtype [Tweet]
     """
     return read_json_array_from_files(to_tweet, "tweets", tweets_n, file_n, file_offset, dir, filename_prefix)
 
@@ -22,7 +23,7 @@ def to_tweet(plain_data):
     return Tweet(pp.preprocess_tweet(plain_data))
 
 
-def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser', filename_prefix='xa'):
+def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser', filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
@@ -36,11 +37,12 @@ def to_tuser(plain_data):
     return TUser(plain_data)
 
 
-def get_articles(articles_n=None, file_n=None, file_offset=0, dir='PreprocessingRSS', filename_prefix='2016100'):
+def get_articles(articles_n=None, file_n=None, file_offset=0, dir='PreprocessingRSS', filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
+    #filename_prefix = '2016100'
     return read_json_array_from_files(to_article, "RSSArticles", articles_n, file_n, file_offset, dir, filename_prefix)
 
 

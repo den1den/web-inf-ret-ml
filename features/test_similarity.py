@@ -13,6 +13,63 @@ from inputoutput.imaging import plot_and_show_matrix
 from inputoutput.input import get_tweets
 
 
+class TestCaseAfterExam(TestCase):
+    def test_count_duplicate_keyword(self):
+        N = 10000
+        tweets = get_tweets(N)
+        MAX = 0
+        c = 0
+        c_1 = 0
+        c_2 = 0
+        c_3 = 0
+        c_4 = 0
+        uqc = 0
+
+        duplicate_words = set()
+
+        for tweet in tweets:
+            F = tweet.get_keyword_frequencies()
+            t_MAX = 0
+            t_c = False
+            t_c_1 = 0
+            t_c_2 = 0
+            t_c_3 = 0
+            t_c_4 = 0
+            for (word, freq) in F.items():
+                if freq > t_MAX:
+                    t_MAX = freq
+                if freq > 1:
+                    t_c = True
+                    if len(word) > 3:
+                        duplicate_words.add(word)
+                if freq == 1:
+                    t_c_1 += 1
+                elif freq == 2:
+                    t_c_2 += 1
+                elif freq == 3:
+                    t_c_3 += 1
+                elif freq >= 4:
+                    t_c_4 += 1
+            if t_c:
+                c += 1
+            c_1 += t_c_1
+            c_2 += t_c_2
+            c_3 += t_c_3
+            c_4 += t_c_4
+            MAX += t_MAX
+
+            uqc += tweet.get_unique_word_count()
+
+        print("all %d found duplicates:\n%s" % (len(duplicate_words), duplicate_words))
+        print("%.3f%% of tweets have one or more duplicate words" % (c / N * 100))
+        print("On average each tweet has %.1f words with frequency == 1" % (c_1 / N))
+        print("On average each tweet has %.2f words with frequency == 2" % (c_2 / N))
+        print("On average each tweet has %.2f words with frequency == 3" % (c_3 / N))
+        print("On average each tweet has %.3f words with frequency >= 4" % (c_4 / N))
+        print("On average each tweet has %.1f unique words" % (uqc / N))
+        print("On average the frequency of the most common word per tweet is %.1f" % (MAX / N))
+
+
 class TestCase2(TestCase):
     def test_sim(self):
         N = 50000-39601

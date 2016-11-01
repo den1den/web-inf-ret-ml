@@ -3,7 +3,7 @@ class Article(dict):
         super().__init__(iterable, **kwargs)
 
     def __str__(self, *args, **kwargs):
-       return str(self['Title'])
+       return str(self['title'])
 
     def get_keywords(self):
-        return self['keywords_Title'] if 'keywords_Title' in self else None
+        return self['keywords_title'] if 'keywords_title' in self else None
