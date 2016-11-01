@@ -102,3 +102,6 @@ frontend/static_root/
 df_t.json
 idf_t.csv
 idf_t.json
+idf_article.json
+tf_idf.csv
+tf_idf_articles.csv
