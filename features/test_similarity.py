@@ -1,6 +1,7 @@
 import csv
 import json
 import operator
+import os
 import time
 from unittest import TestCase
 
@@ -9,11 +10,49 @@ from scipy.sparse.csgraph import reverse_cuthill_mckee
 
 from config.config import PROJECT_DIR, DROPBOX
 from features.similarity import similarity_strings, similarity_tf
+from features.term_frequency import get_idf_tweets, get_idf_articles
 from inputoutput.imaging import plot_and_show_matrix
-from inputoutput.input import get_tweets
+from inputoutput.input import get_tweets, get_articles
 
 
 class TestCaseAfterExam(TestCase):
+    def test_tf_idf_articles(self):
+        articles = get_articles()
+        idf = get_idf_articles()
+
+        writer = csv.writer(open(os.path.join(PROJECT_DIR, 'tf_idf_articles.csv'), 'w+', encoding='utf8', newline='\n'),
+                            delimiter=';')
+        writer.writerow(['article', 'article_id', 'term', 'tf_idf'])
+
+        for a in articles:
+            # print(tweet)
+            f = a.get_keyword_frequencies()
+            for (term, tf) in f.items():
+                try:
+                    tf_idf = tf * idf[term]
+                    # print("(%d):\t%.3f\t%s" % (tweet.id, tf_idf, term))
+                    writer.writerow([str(a), a.id, term, str(tf_idf).replace('.', ',')])
+                except KeyError as e:
+                    raise e
+
+
+    def test_tf_idf_tweets(self):
+        N = 20000
+        tweets = get_tweets(N)
+        idf = get_idf_tweets()
+
+        writer = csv.writer(open(os.path.join(PROJECT_DIR, 'tf_idf.csv'), 'w+', encoding='utf8', newline='\n'), delimiter=';')
+        writer.writerow(['tweet_text', 'tweet_id', 'term', 'tf_idf'])
+
+        for tweet in tweets:
+            # print(tweet)
+            f = tweet.get_keyword_frequencies()
+            for (term, tf) in f.items():
+                tf_idf = tf * idf[term]
+                # print("(%d):\t%.3f\t%s" % (tweet.id, tf_idf, term))
+                writer.writerow([str(tweet), tweet.id, term, str(tf_idf).replace('.', ',')])
+
+
     def test_count_duplicate_keyword(self):
         N = 10000
         tweets = get_tweets(N)

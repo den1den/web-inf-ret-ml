@@ -84,7 +84,7 @@ def strip_text(raw_text):
     """
 
     # Remove all non-roman and numeric characters
-    return regex3.sub("", regex2.sub("", regex1.sub("", raw_text)))
+    return regex3.sub("", regex2.sub("", regex1.sub("", raw_text))).lower()
 
 
 def extract_keywords(full_text: str, stop_list = None):
