@@ -17,11 +17,15 @@ def preprocess_article(plain_article):
     :param plain_article: article details in json format
     :return: article preprocessed
     """
+    plain_article['id'] = plain_article.pop('ArticleID')
+    plain_article['description'] = plain_article.pop('Description')
+    plain_article['publish_date'] = plain_article.pop('Publish_date')
+    del plain_article['Publish date']
+    plain_article['title'] = plain_article.pop('Title')
+    plain_article['author_id'] = plain_article.pop('Authorid')
+    plain_article['link'] = plain_article.pop('Link')
 
-    if hasattr(plain_article, 'Publish date'):
-        del plain_article['Publish date']
-
-    return preprocess_text(preprocess_text(plain_article, 'Description'), 'Title')
+    return preprocess_text(preprocess_text(plain_article, 'description'), 'title')
 
 
 def give_unique_ids(tweets):

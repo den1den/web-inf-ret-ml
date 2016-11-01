@@ -15,8 +15,8 @@ class TestTweetsInput(TestCase):
         self.unique_ids_test(data)
 
     def test_unique_get_articles(self):
-        data = get_articles(894)
-        self.unique_ids_test(data, id_tag='ArticleID')
+        data = get_articles(filename_prefix='')
+        self.unique_ids_test(data)
 
     def unique_ids_test(self, data_array, print_data=True, id_tag='id'):
         format_N = "[%0" + str(math.ceil(math.log(len(data_array) + 1, 10))) + "d]"

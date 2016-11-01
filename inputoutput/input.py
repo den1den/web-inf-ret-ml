@@ -18,10 +18,11 @@ def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTwee
 
 
 def to_tweet(plain_data):
+    """"This actually creates the Tweet objects"""
     return Tweet(pp.preprocess_tweet(plain_data))
 
 
-def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessUser', filename_prefix='xa'):
+def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser', filename_prefix='xa'):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
@@ -30,6 +31,8 @@ def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessUser', f
 
 
 def to_tuser(plain_data):
+    """"This actually creates the TUser objects"""
+    plain_data['id'] = plain_data.pop('userid')
     return TUser(plain_data)
 
 
@@ -42,6 +45,7 @@ def get_articles(articles_n=None, file_n=None, file_offset=0, dir='Preprocessing
 
 
 def to_article(plain_data):
+    """"This actually creates the Article objects"""
     return Article(pp.preprocess_article(plain_data))
 
 #
