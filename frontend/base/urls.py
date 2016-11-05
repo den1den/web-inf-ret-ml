@@ -22,7 +22,7 @@ from django.views.generic import TemplateView
 from frontend.api.views import ReloadView, SelfDeployView
 
 urlpatterns = [
-    url(r'home/', TemplateView.as_view(template_name="index.html")),
+    url(r'^home/', TemplateView.as_view(template_name="index.html")),
 
     url(r'^admin/', admin.site.urls),
 
