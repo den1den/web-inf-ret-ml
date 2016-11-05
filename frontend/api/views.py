@@ -24,7 +24,7 @@ def stream_command_output(command):
 
 class ReloadView(View):
     def get(self, request, *args, **kwargs):
-        return StreamingHttpResponse(stream_command_output_git())
+        return StreamingHttpResponse(stream_command_output('supervisorctl restart webinfret'))
 
 class SelfDeployView(View):
     def get(self, request, *args, **kwargs):
