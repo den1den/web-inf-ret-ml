@@ -1,3 +1,5 @@
 TWEETS_HOMEDIR = '/home/dennis/pCloudDrive/tweets/'
 PROJECT_DIR = '/home/dennis/repos/web-inf-ret-ml/'
 DROPBOX = '/home/dennis/Dropbox/2IMW15 - Web information retrieval and data mining/Web inf. retrieval group project/'
+
+PHP_PROJECT_ROOT = os.path.abspath(os.path.join(PROJECT_DIR, '../web-inf-retrieval'))
