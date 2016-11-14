@@ -24,16 +24,6 @@ def stream_command_output(command):
     yield "</pre>"
 
 
-class ReloadView(View):
-    def get(self, request, *args, **kwargs):
-        return StreamingHttpResponse(stream_command_output('supervisorctl restart webinfret'))
-
-
-class DeployView(View):
-    def get(self, request, *args, **kwargs):
-        return StreamingHttpResponse(stream_command_output('sh frontend/deployserver.sh'))
-
-
 class TestPhpOutputView(View):
     def get(self, request, *args, **kwargs):
         php_args = 'test_command'
