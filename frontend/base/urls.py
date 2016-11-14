@@ -19,9 +19,13 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.views.generic import TemplateView
 
+from frontend.api.views import TestPhpOutputView
+
 urlpatterns = [
     url(r'^home/', TemplateView.as_view(template_name="index.html")),
 
     url(r'^admin/', admin.site.urls),
+
+                  url(r'^test/php/', TestPhpOutputView.as_view()),
 
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
