@@ -1,7 +1,15 @@
 from unittest import TestCase
 
-from inputoutput.input import get_tweets, get_articles
+from config import config
+from inputoutput.input import get_tweets, get_articles, read_json_array_from_files
 from preprocessing.preprocess import strip_text
+
+
+class BufferedPreprocessing(TestCase):
+    """Read and process all tweets from config.TWEETS_RAW_HOMEDIR"""
+
+    def test_read(self):
+        json_array = read_json_array_from_files(lambda d: d, config.TWEETS_RAW_HOMEDIR)
 
 
 class TestPreprocessing(TestCase):

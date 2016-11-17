@@ -3,9 +3,9 @@ import os
 import time
 
 from config.config import TWEETS_HOMEDIR
+from models.article import Article
 from models.tuser import TUser
 from models.tweet import Tweet
-from models.article import Article
 from preprocessing import preprocess as pp
 
 
@@ -15,7 +15,8 @@ def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir='PreprocessingTwee
     see input.read_json_array_from_files()
     :rtype [Tweet]
     """
-    return read_json_array_from_files(to_tweet, "tweets", tweets_n, file_n, file_offset, dir, filename_prefix)
+    return read_json_array_from_files(to_tweet, os.path.join(TWEETS_HOMEDIR, dir), tweets_n, 0, file_n, file_offset,
+                                      filename_prefix)
 
 
 def to_tweet(plain_data):
@@ -28,7 +29,8 @@ def get_tusers(users_n=None, file_n=None, file_offset=0, dir='PreprocessingUser'
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
-    return read_json_array_from_files(to_tuser, "tusers", users_n, file_n, file_offset, dir, filename_prefix)
+    return read_json_array_from_files(to_tuser, os.path.join(TWEETS_HOMEDIR, dir), users_n, 0, file_n, file_offset,
+                                      filename_prefix)
 
 
 def to_tuser(plain_data):
@@ -43,7 +45,8 @@ def get_articles(articles_n=None, file_n=None, file_offset=0, dir='Preprocessing
     see input.read_json_array_from_files()
     """
     #filename_prefix = '2016100'
-    return read_json_array_from_files(to_article, "RSSArticles", articles_n, file_n, file_offset, dir, filename_prefix)
+    return read_json_array_from_files(to_article, os.path.join(TWEETS_HOMEDIR, dir), articles_n, 0, file_n, file_offset,
+                                      filename_prefix)
 
 
 def to_article(plain_data):
@@ -59,50 +62,57 @@ def as_id_dict(data):
     return {d.id: d for d in data}
 
 
-def read_json_array_from_files(dict_to_obj, verbosity_subject_plural='?', N=None, file_n=None, file_offset=0, dir='',
+def read_json_array_from_files(dict_to_obj, dirpath, item_count=None, item_offset=0, file_count=None, file_offset=0,
                                filename_prefix=''):
     """
-    :param dict_to_obj: function from dict -> object to store
-    :param verbosity_subject_plural
-    :param N: number of object to read in total
-    :param file_n: number of files to read
+    :param dict_to_obj: function from dict -> object to sto
+    :param dirpath: abs path to directory to read from
+    :param item_offset: number of object to read in total
+    :param item_count: number of items to read
     :param file_offset: starting index of the file to read
-    :param dir: directory to read from
+    :param file_count: number of files to read
     :param filename_prefix: filter on the filenames
-    :return: Tweet[]
+    :return: obj[]
     """
-    filecounter = 0  # Filecounter
+    filecounter = 0
     items = []
-    abs_dir = os.path.join(TWEETS_HOMEDIR, dir)
 
     if filename_prefix is None: filename_prefix = ''
 
     if filename_prefix == '':
-        print("Input: Start reading from all files recursivly in `%s`, limit = %s" % (abs_dir, N, ))
+        print("Input: Start reading %s, with offset %d, from %s `%s*` files, with offset %d in `%s`" %
+              (item_count or 'all', item_offset, file_count or 'all', filename_prefix, file_offset, dirpath,))
     else:
-        print("Input: Start reading from all `%s*` files recursivly in `%s`, limit = %s" % (filename_prefix, abs_dir, N, ))
+        print("Input: Start reading %s, with offset %d, from %s files, with offset %d in `%s`" %
+              (item_count or 'all', item_offset, file_count or 'all', file_offset, dirpath,))
 
     # Start walking the filesystem
     t0 = time.time()
-    for dp, dn, fn in os.walk(abs_dir):
-        for tweet_filename in fn:
-            if tweet_filename[0:len(filename_prefix)] == filename_prefix:
+    for dirpath, dn, fn in os.walk(dirpath):
+        for filename in fn:
+            if filename.endswith('.rar'):
+                print("Skipping ,rar file: %s" % filename)
+                continue
+            if filename[0:len(filename_prefix)] == filename_prefix:
+                # File matches
+                filecounter += 1
                 if filecounter < file_offset:
                     continue
-                filename = os.path.join(dp, tweet_filename)
-                file_tweets = _proccess_file(dict_to_obj, filename)
-                filecounter += 1
-                if N is not None and len(items) + len(file_tweets) > N:
-                    items += file_tweets[0:N - len(items)]
-                    break
-                items += file_tweets
-                if file_n is not None and filecounter == file_n:
-                    break
+                filepath = os.path.join(dirpath, filename)
+                file_items = _proccess_file(dict_to_obj, filepath)
+                if item_offset > len(file_items):
+                    raise IOError(
+                        "Cannot have an offset of %d in a file with %d entries" % (item_offset, len(file_items)))
+
+                items += file_items[item_offset:item_offset + item_count - len(items)]
+
+                # Offset is applied, so reset it
+                item_offset = 0
     t1 = time.time()
 
-    if N is not None and len(items) != N:
+    if len(items) != item_count:
         raise AssertionError(
-            "Input error: Could only read %d of %d %s" % (len(items) or 0, N, verbosity_subject_plural))
+            "Input error: Could only read %d of %d %s" % (len(items), item_count, verbosity_subject_plural))
 
     if filecounter == 0:
         raise IOError("Input error: No files read!")
