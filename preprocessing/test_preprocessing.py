@@ -1,18 +1,34 @@
+import os
 from unittest import TestCase
 
 from config import config
-from inputoutput.input import get_tweets, get_articles, read_json_array_from_files
-from preprocessing.preprocess import strip_text
-
-
-class BufferedPreprocessing(TestCase):
-    """Read and process all tweets from config.TWEETS_RAW_HOMEDIR"""
-
-    def test_read(self):
-        json_array = read_json_array_from_files(lambda d: d, config.TWEETS_RAW_HOMEDIR)
+from inputoutput.input import get_tweets, get_articles, read_json_array_from_files, csv_write
+from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_spaces
 
 
 class TestPreprocessing(TestCase):
+    def test_unicode_regex(self):
+        m = re_unicode_decimal.search('66&#0000;66')
+        assert (m.group(1) or m.group(2)) == '0000'
+        m = re_unicode_decimal.search('&#8230;')
+        assert (m.group(1) or m.group(2)) == '8230'
+        m = re_unicode_decimal.search('Qatar&#8217;s')
+        assert (m.group(1) or m.group(2)) == '8217'
+        m = re_unicode_decimal.search('&mdash;')
+        assert (m.group(1) or m.group(2)) == 'mdash'
+        m = re_unicode_decimal.search('&amp;')
+        assert (m.group(1) or m.group(2)) == 'amp'
+        m = re_unicode_decimal.search('Agents&#8221;><')
+        assert (m.group(1) or m.group(2)) == '8221'
+
+    def test_ws_regex(self):
+        assert re_spaces.sub(' ', '  ') == ' '
+        assert re_spaces.sub(' ', '  a') == ' a'
+        assert re_spaces.sub(' ', '\n\t  <') == ' <'
+        assert re_spaces.sub(' ', '\n\t  A\n\t	') == ' A '
+
+
+class TestPreprocessedData(TestCase):
 
     def test_unique_id(self):
         """ Tests if the IDs are all unique
@@ -62,5 +78,3 @@ class TestPreprocessing(TestCase):
         for article in articles:
             print(article['Description'])
             print(article['real_Description'])
-
-

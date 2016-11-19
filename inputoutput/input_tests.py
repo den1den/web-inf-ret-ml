@@ -2,7 +2,49 @@ import math
 import sys
 from unittest import TestCase
 
-from inputoutput.input import get_tweets, get_tusers, get_articles
+import os
+
+from config import config
+from inputoutput.input import get_tweets, get_tusers, get_articles, read_json_array_from_files, csv_write, csv_read
+
+
+class TestIOMethods(TestCase):
+    def test_item_offset(self):
+        i10 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, item_count=10, item_offset=0)
+        i5 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, item_count=5, item_offset=0)
+        i5_2 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, item_count=5, item_offset=5)
+        assert i10 == i5 + i5_2
+
+    def test_file_offset(self):
+        i10 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, file_count=2, file_offset=10)
+        i5 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, file_count=1, file_offset=10)
+        i5_2 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, file_count=1, file_offset=11)
+        assert i10 == i5 + i5_2
+
+    def test_csv_writer(self):
+        tmpfile = os.path.join(config.PROJECT_DIR, 'tmp.csv')
+        data = [{'a': None, 'b': '489198'}, {'a': 'A\n\n\n2', 'b': 'B'+os.linesep+'2'}, {'a': 'A3', 'b': 'B3'}]
+        write_data = csv_write(tmpfile, data, ['a', 'b'])
+        read_data = csv_read(tmpfile, ['a', 'b'])
+        print(write_data)
+        print(read_data)
+        assert read_data == write_data
+        write_data = csv_write(tmpfile, write_data, ['a'])
+        read_data = csv_read(tmpfile, ['a'])
+        print(write_data)
+        print(read_data)
+        assert read_data == write_data
+        write_data = csv_write(tmpfile, data, ['a', 'b', 'x'])
+        read_data = csv_read(tmpfile, ['a', 'b', 'x'])
+        print(write_data)
+        print(read_data)
+        assert read_data == write_data
+        write_data = csv_write(tmpfile, data)
+        read_data = csv_read(tmpfile)
+        print(write_data)
+        print(read_data)
+        assert read_data == write_data
+        os.remove(tmpfile)
 
 
 class TestTweetsInput(TestCase):
