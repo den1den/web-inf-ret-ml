@@ -13,13 +13,13 @@ TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingUser')
 ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingRSS')
 
 
-def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir=TWEETS_DIR, filename_prefix=''):
+def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
     """
     Read in tweets from files
     see input.read_json_array_from_files()
     :rtype [Tweet]
     """
-    return read_json_array_from_files(to_tweet, dir, tweets_n, 0, file_n, file_offset,
+    return read_json_array_from_files(to_tweet, dir_path, tweets_n, 0, file_n, file_offset,
                                       filename_prefix)
 
 
@@ -28,12 +28,12 @@ def to_tweet(preprocessed_data):
     return Tweet(preprocessed_data)
 
 
-def get_tusers(users_n=None, file_n=None, file_offset=0, dir=TWEET_USERS_DIR, filename_prefix=''):
+def get_tusers(users_n=None, file_n=None, file_offset=0, dir_path=TWEET_USERS_DIR, filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
-    return read_json_array_from_files(to_tuser, dir, users_n, 0, file_n, file_offset,
+    return read_json_array_from_files(to_tuser, dir_path, users_n, 0, file_n, file_offset,
                                       filename_prefix)
 
 
@@ -42,13 +42,13 @@ def to_tuser(preprocessed_data):
     return TUser(preprocessed_data)
 
 
-def get_articles(articles_n=None, file_n=None, file_offset=0, dir=ARTICLES_DIR, filename_prefix=''):
+def get_articles(articles_n=None, file_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
     # filename_prefix = '2016100'
-    return read_json_array_from_files(to_article, dir, articles_n, 0, file_n, file_offset,
+    return read_json_array_from_files(to_article, dir_path, articles_n, 0, file_n, file_offset,
                                       filename_prefix)
 
 
@@ -65,18 +65,22 @@ def as_id_dict(data):
     return {d.id: d for d in data}
 
 
-def read_json_array_from_files(dict_to_obj, dirpath, item_count=None, item_offset=0, file_count=None, file_offset=0,
-                               filename_prefix='', filename_postfix='.json', dirname_prefix='', file_alternation=1, file_alternation_index=0):
+def read_json_array_from_files(dict_to_obj, dir_path, item_count=None, item_offset=0, file_count=None, file_offset=0,
+                               filename_prefix='', filename_postfix='.json',
+                               dir_name_prefix='', file_alternation=1, file_alternation_index=0):
     """
     Loads in json arrays from a directory recursively
     :param dict_to_obj: function from dict -> object to sto
-    :param dirpath: abs path to directory to read from
-    :param item_offset: number of object to skip in total
+    :param dir_path: abs path to directory to read from
     :param item_count: number of items to read in total
-    :param file_offset: starting index of the file to read
+    :param item_offset: number of object to skip in total
     :param file_count: number of files to read
+    :param file_offset: starting index of the file to read
     :param filename_prefix: filter on the filenames
     :param filename_postfix: filter on the filenames
+    :param dir_name_prefix:
+    :param file_alternation:
+    :param file_alternation_index:
     :return: obj[]
     """
     filecounter = 0
@@ -84,13 +88,13 @@ def read_json_array_from_files(dict_to_obj, dirpath, item_count=None, item_offse
 
     print("Input: Start reading %s entries (with entry offset %d) from %s `%s*%s` files (with file offset %d) from `%s`" %
           (item_count or 'all', item_offset, file_count or 'all', filename_prefix, filename_postfix, file_offset,
-           dirpath,))
+           dir_path,))
 
     # Start walking the filesystem
     t0 = time.time()
-    for dirpath, dn, fn in os.walk(dirpath):
-        lowercase_dirname = os.path.basename(dirpath)
-        if not lowercase_dirname.startswith(dirname_prefix):
+    for dir_path, dn, fn in os.walk(dir_path):
+        lowercase_dir_name = os.path.basename(dir_path)
+        if not lowercase_dir_name.startswith(dir_name_prefix):
             continue
         for filename in fn:
             # Check if file should be read
@@ -104,9 +108,9 @@ def read_json_array_from_files(dict_to_obj, dirpath, item_count=None, item_offse
                 break
 
             # Read file
-            filepath = os.path.join(dirpath, filename)
+            file_path = os.path.join(dir_path, filename)
             items_to_read = None if item_count is None else item_count - len(items)
-            applied_offset, file_items = _proccess_file(dict_to_obj, filepath, item_offset, items_to_read)
+            applied_offset, file_items = _proccess_file(dict_to_obj, file_path, item_offset, items_to_read)
             items += file_items
             if len(items) == item_count:
                 break

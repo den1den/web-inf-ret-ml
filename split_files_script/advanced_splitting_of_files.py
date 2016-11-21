@@ -4,9 +4,10 @@ If the number of characters one one line is less then 1 << 32, otherwise it is s
 """
 import json
 import os
+from abc import abstractmethod, ABCMeta
 from os import listdir
 
-from preprocessing.preprocess import re_spaces
+from preprocessing.preprocess import re_whitespace
 
 WRITE_OUTPUT = True
 
@@ -15,27 +16,68 @@ buffer = 1 << 25
 buffer = 1 << 22
 buffer = 1 << 4
 
-class NaiveParser():
-    chunk = ""
-    max_item_size_chars = 100000
 
-    file_index = 0
+class Parser(metaclass=ABCMeta):
     items = []
+    file_index = 0
 
     def __init__(self, base_input_path, base_filename, base_output_path):
         self.base_input_path = base_input_path
         self.base_filename = base_filename
         self.base_output_path = base_output_path
-        self.clean_output_dir()
+
+    def __call__(self):
+        for f in listdir(self.base_input_path):
+            file_path = os.path.join(self.base_input_path, f)
+            if not os.path.isfile(file_path):
+                continue
+            try:
+                with open(file_path, 'r', encoding='UTF8') as fp:
+                    print("Reading from %s" % file_path)
+                    self.parse_file(fp)
+            except Exception as e:
+                print("Could not parse file %s" % file_path)
+
+        self.close()
+
+    def clean_output_dir(self):
+        # Delete previous
+        if not os.path.exists(self.base_output_path):
+            os.makedirs(self.base_output_path)
+            return
+        for f in listdir(self.base_output_path):
+            if f.endswith('.valid.json'):
+                old_filepath = os.path.join(self.base_output_path, f)
+                print("removing %s" % old_filepath)
+                os.remove(old_filepath)
+
+    def output(self, force=False):
+        if force or len(self.items) >= items_per_file_target:
+            output_path = os.path.join(self.base_output_path, '%s__%d.valid.json' % (self.base_filename, self.file_index))
+            if WRITE_OUTPUT:
+                if len(self.items) > 0:
+                    json.dump(self.items, open(output_path, 'w+', encoding='UTF8'), indent=1)
+                    print("Output written to %s" % output_path)
+            self.file_index += 1
+            self.items = []
+
+    def close(self):
+        self.output(force=True)
+
+    @abstractmethod
+    def parse_file(self, fp):
+        pass
+
+
+class NaiveParser(Parser):
+    chunk = ""
+    max_item_size_chars = 100000
 
     def parse_string(self, raw_string):
         self.chunk += raw_string
-        while self.try_find_tweet:
-            if len(self.items) >= items_per_file_target:
-                self.output()
-            pass
+        while self.try_find_tweet():
+            self.output()
 
-    @property
     def try_find_tweet(self):
         if self.chunk == "":
             return False
@@ -66,29 +108,6 @@ class NaiveParser():
         self.chunk = self.chunk[len(iso_chunk)+i_start:len(self.chunk)]
         return True
 
-    def clean_output_dir(self):
-        # Delete previous
-        if not os.path.exists(self.base_output_path):
-            os.makedirs(self.base_output_path)
-            return
-        for f in listdir(self.base_output_path):
-            if f.endswith('.valid.json'):
-                old_filepath = os.path.join(self.base_output_path, f)
-                print("removing %s" % old_filepath)
-                os.remove(old_filepath)
-
-    def output(self):
-        output_path = os.path.join(self.base_output_path, '%s__%d.valid.json' % (self.base_filename, self.file_index))
-        if WRITE_OUTPUT:
-            if len(self.items) > 0:
-                json.dump(self.items, open(output_path, 'w+', encoding='UTF8'))
-                print("Output written to %s" % output_path)
-        self.file_index += 1
-        self.items = []
-
-    def close(self):
-        self.output()
-
     def parse_file(self, fp):
         lines = fp.readlines()
         content = ''.join(lines)
@@ -97,6 +116,34 @@ class NaiveParser():
         if content.endswith('}'):
             content = content[0:len(content) - 1]
         self.parse_string(content)
+
+
+class NewLineSeparatedParser(Parser):
+    def parse_file(self, fp):
+        n = 0
+        lines = fp.readlines()
+        for line in lines:
+            self.parse_line(n, line)
+            n += 1
+
+    def parse_line(self, n:int, line:str):
+        original_line = line
+        line = line.strip()
+        if line == '[':
+            return
+        if line == ']':
+            return
+        if line.endswith('},'):
+            line = line[:-1]
+        if line.startswith('[{'):
+            line = line[1:]
+        if line.endswith('}]'):
+            line = line[:-1]
+        if not (line.startswith('{') and line.endswith('}')):
+            print('error at line %d: %s ... %s' % (n, original_line[:10], original_line[-10:]))
+            return
+        self.items.append(json.loads(line))
+        self.output()
 
 
 class Processor:
@@ -117,7 +164,7 @@ class Processor:
             return False
         splitted = self.chunk.split('}{')
         if len(splitted) == 1:
-            splitted = re_spaces.sub('', self.chunk).split('}{')
+            splitted = re_whitespace.sub('', self.chunk).split('}{')
         concated = ""
         for i in range(0, len(splitted)):
             if i == 0:
@@ -190,13 +237,9 @@ class Processor:
                 print("removing "+os.path.join(self.output_path, f))
                 os.remove(os.path.join(self.output_path, f))
 
+
 if __name__ == '__main__':
-    dir_to_process = 'E:\\pCloud_buffer\\raw-tweets\\elections-22-10-raw\\'
-    p = NaiveParser(dir_to_process, '20161022', os.path.join(dir_to_process, 'valid'))
-    for f in listdir(p.base_input_path):
-        if f.startswith('20161022___') or f.startswith('20161022___'):
-            filepath = os.path.join(p.base_input_path, f)
-            with open(filepath, 'r', encoding='UTF8') as fp:
-                print("Reading from %s" % filepath)
-                p.parse_file(fp)
-    p.close()
+    dir_to_process = 'E:\\pCloud_buffer\\raw-tweets\\elections-26-10-raw\\'
+    p = NewLineSeparatedParser(dir_to_process, '20161026', os.path.join(dir_to_process, 'valid'))
+    p.clean_output_dir()
+    p()

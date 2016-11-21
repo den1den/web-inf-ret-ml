@@ -5,6 +5,7 @@ from unittest import TestCase
 import os
 
 from config import config
+from config.config import PCLOUD_BUFFER_DIR
 from inputoutput.input import get_tweets, get_tusers, get_articles, read_json_array_from_files, csv_write, csv_read
 
 
@@ -48,6 +49,9 @@ class TestIOMethods(TestCase):
 
 
 class TestTweetsInput(TestCase):
+    def test_valid_json(self):
+        read_json_array_from_files(lambda d: d, os.path.join(PCLOUD_BUFFER_DIR, 'raw-tweets'), filename_prefix='20161023')
+
     def test_unique_tweet_ids(self):
         data = get_tweets(filename_prefix='')
         self.unique_ids_test(data)
