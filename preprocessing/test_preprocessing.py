@@ -3,7 +3,7 @@ from unittest import TestCase
 
 from config import config
 from inputoutput.input import get_tweets, get_articles, read_json_array_from_files, csv_write
-from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_spaces
+from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_whitespace, re_currency, re_currency_matches
 
 
 class TestPreprocessing(TestCase):
@@ -22,10 +22,33 @@ class TestPreprocessing(TestCase):
         assert (m.group(1) or m.group(2)) == '8221'
 
     def test_ws_regex(self):
-        assert re_spaces.sub(' ', '  ') == ' '
-        assert re_spaces.sub(' ', '  a') == ' a'
-        assert re_spaces.sub(' ', '\n\t  <') == ' <'
-        assert re_spaces.sub(' ', '\n\t  A\n\t	') == ' A '
+        assert re_whitespace.sub(' ', '  ') == ' '
+        assert re_whitespace.sub(' ', '  a') == ' a'
+        assert re_whitespace.sub(' ', '\n\t  <') == ' <'
+        assert re_whitespace.sub(' ', '\n\t  A\n\t	') == ' A '
+
+    def test_currency_regex(self):
+        assert re_currency_matches('a$1bounty') == [1]
+        assert re_currency_matches('a $1 bounty') == [1]
+        assert re_currency_matches('$1') == [1]
+        assert re_currency_matches('$1.2') == [1.2]
+        assert re_currency_matches('$1,000') == [1000]
+        assert re_currency_matches('$1,000.2') == [1000.2]
+        assert re_currency_matches('$1,2,3') == [123]
+        assert re_currency_matches('$1,2.3') == [12.3]
+        assert re_currency_matches('received $41,165 from prominent') == [41165]
+        assert re_currency_matches('another $300-$400 million') == [300000000, 400000000]
+        assert re_currency_matches('$1 $2') == [1, 2]
+        assert re_currency_matches('$5or$6') == [5, 6]
+        assert re_currency_matches(' #Clinton $12,000,000.00 t… ') == [12000000]
+        assert re_currency_matches(' #Clinton $12,000,000.00 t... ') == [12000000]
+        assert re_currency_matches(' #Clinton $12.00 t ') == [12000000000000]
+        assert re_currency_matches(' #Clinton $12 t ') == [12000000000000]
+        assert re_currency_matches('take $12M from') == [12000000]
+        assert re_currency_matches('Her $10,000 For') == [10000]
+        assert re_currency_matches('ISIS $400 million') == [400000000]
+        assert re_currency_matches('Pardon-$5mill Removal from terror list-$3mill Drone strike-$10mill Sp') == [5000000, 3000000, 10000000]
+        assert re_currency_matches('receives $10s of millions') == [10]
 
 
 class TestPreprocessedData(TestCase):

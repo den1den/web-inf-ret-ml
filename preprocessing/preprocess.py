@@ -1,19 +1,66 @@
-import json
 import os
-import random
 import re
 from operator import itemgetter
 from datetime import datetime
-import math
 from urllib.parse import urlparse
 from config import config
 from inputoutput.input import csv_write, read_json_array_from_files
 from nltk.corpus import stopwords
 
-re_spaces = re.compile(r'\s+')
+re_whitespace = re.compile(r'\s+')
 re_html = re.compile(r'<[^>]+>')
 re_unicode_decimal = re.compile(r'&#(\d{2,4});|&([a-z]+);')
 re_html_a_tag = re.compile(r'<a href="([^"]+)"[^>]*>(.+)</a>', flags=re.IGNORECASE)
+re_next_word = re.compile(r'\s*(\w+)(…|[.][.][.])?')
+CURRENCY_PATTERN = r'[$€](\d+(?:[,]\d+)*(?:[.]\d+)?)'
+re_currency = re.compile(r'(?:^|\s+)' + CURRENCY_PATTERN + r'(?:$|\s+)')
+re_currency = re.compile(CURRENCY_PATTERN)
+re_quotations = re.compile(r'"\s*([^"]+)[.]?\s*"')
+
+def re_currency_matches(string):
+    amounts = []
+    factor = 1
+    prev_word = None
+    for m in re_currency.finditer(string):
+        amount = ''.join(m.groups(''))
+        try:
+            amount = float(amount.replace(',', ''))
+        except ValueError:
+            print("Strange amount found: %s" % amount)
+            continue
+        next_word_match = re_next_word.search(string, m.end())
+        if next_word_match:
+            nxt = next_word_match.group(1).lower()
+            cutoff = next_word_match.group(2) is not None
+            if cutoff:
+                pass
+            elif nxt == 'k' or nxt == 'g' or nxt == 'grand':
+                factor = 1000
+            elif nxt == 'm' or nxt == 'mm' or nxt == 'mil' or nxt == 'mill' or nxt == 'milion' or nxt == 'million':
+                factor = 1000000
+            elif nxt == 'b' or nxt == 'bil' or nxt == 'bill' or nxt == 'bilion' or nxt == 'billion':
+                factor = 1000000000
+            elif nxt == 't' or nxt == 'tril' or nxt == 'trill' or nxt == 'trilion' or nxt == 'trillion':
+                factor = 1000000000000
+            elif nxt == 'bn':
+                pass
+
+            if prev_word:
+                if prev_word.isdigit():
+                    amounts[-1] *= factor
+            amount *= factor
+
+            prev_word = nxt
+        else:
+            prev_word = None
+
+        amounts.append(amount)
+    return amounts
+
+
+def re_date_matches(text):
+    pass
+
 
 class Preprocessor:
     def __init__(self):
@@ -24,10 +71,24 @@ class Preprocessor:
         self.tweet_n_duplicate = 0
         self.tweet_texts = {}
         self.tweet_sources = set()
+        self.quotations = set()
 
         self.stopwords = set(stopwords.words('english'))
         self.drop_chars = [',', '.', '#', '@', '[', ']', '{', '}', '"', ':', '!', "'", '?']
-        self.replace_words = [(' n\'t', ' not'), ('n\'t', ' not'), ('&amp;', 'and'), (' he\'s', ' he is')]
+        self.replace_chars = [
+            ('&amp;', 'and'),
+            ('&gt;', '>'),
+            ('&lt;', '<'),
+            ('\n', ' '),
+        ]
+        self.replace_words = (
+            ("ain't", 'are not'),
+            ("can't", 'cannot'),
+            (" he's", ' he is'),
+            (" she's", ' she is'),
+            (" we're", ' we are'),
+            ("we're", 'we are'),
+        )
 
         self.article_authors = {}
         self.article_ids = set()
@@ -40,7 +101,9 @@ class Preprocessor:
         """
         self.i += 1
 
-        # id
+        #
+        # check if it should be ignored
+        #
         if 'id' not in raw_data:
             # skip incomplete tweets
             self.tweet_skipped.append(raw_data)
@@ -57,20 +120,46 @@ class Preprocessor:
             # only look at english tweets
             self.tweet_skipped.append(raw_data)
             return None
+        if 'user' not in raw_data:
+            # only look at tweets with a user account
+            self.tweet_skipped.append(raw_data)
+            return None
+        if 'entities' not in raw_data:
+            # suspicious
+            self.tweet_skipped.append(raw_data)
+            return None
+        if raw_data['lang'] != 'en':
+            # only look at english tweets
+            self.tweet_skipped.append(raw_data)
+            return None
+
+        # check input assertions
+        if __debug__:
+            assert raw_data['retweet_count'] == 0
+            assert raw_data['retweeted'] == False
+            assert 'entities' in raw_data
+            if 'retweeted_status' in raw_data:
+                assert not raw_data['retweeted_status']['retweeted']
+                assert len(raw_data['entities']['user_mentions']) > 0
+                first_mention = raw_data['entities']['user_mentions'][0]['screen_name']
+                assert raw_data['text'].lower().startswith(('RT @' + first_mention + ': ').lower())
+                assert raw_data['text'][3:4] == '@'
+            for um in raw_data['entities']['user_mentions']:
+                assert len(um['indices']) == 2
+                i_start = um['indices'][0] + 1
+                i_end = um['indices'][1]
+                assert i_end - i_start > 0
+                assert raw_data['text'][i_start - 1:i_start] == '@'
+                assert um['screen_name'].lower() == raw_data['text'][i_start:i_end].lower()
+
+        # tweet id
         id = int(raw_data['id'])
 
-        # text
-        raw_text = str(raw_data['text'])
-        if id in self.tweet_texts:
-            previously_found_text = self.tweet_texts[id]
-            if previously_found_text != raw_text:
-                raise ValueError("Tweet with same ID but different text found")
-            else:
-                # skip tweets with same text and id
-                self.tweet_n_duplicate += 1
-                return None
+        # user_id
+        if 'user' not in raw_data:
+            user_id = -1
         else:
-            self.tweet_texts[id] = raw_text
+            user_id = raw_data['user']['id']
 
         # rt
         rt = 'retweeted_status' in raw_data
@@ -84,89 +173,6 @@ class Preprocessor:
         # hashtags
         hashtags = [hashtag['text'] for hashtag in raw_data['entities']['hashtags']]
 
-        # newline_count
-        newline_count = raw_text.count('\n')
-
-        # user_id
-        user_id = raw_data['user']['id']
-
-        # questionmark
-        questionmark = '?' in raw_text
-
-        # keywords / stripping
-        stripped_text = raw_text
-        index_offset = 0
-        strip_indices = []
-        for e_type in raw_data['entities']:
-            for e in raw_data['entities'][e_type]:
-                strip_indices.append((e['indices'][0], e['indices'][1], ))
-        strip_indices.sort(key=itemgetter(0))
-        for (index_start, index_end) in strip_indices:
-            stripped_text = stripped_text[0:index_start - index_offset] + stripped_text[index_end - index_offset:len(stripped_text)]
-            index_offset += index_end - index_start
-        stripped_text = stripped_text.strip().lower()
-        # ends_dots
-        ends_dots = stripped_text.endswith('…') or stripped_text.endswith('...')
-        if ends_dots:
-            # strip differently with end_dots
-            if stripped_text.endswith('…'):
-                stripped_text = stripped_text[0:len(stripped_text) - 1]
-            if stripped_text.endswith('...'):
-                stripped_text = stripped_text[0:len(stripped_text) - 3]
-            if stripped_text.endswith(' '):
-                print('End cutoff alright? %d' % (self.i - 1))
-                # print('%d, %d' % (raw_text.count('…'), raw_text.count('...')))
-                # print('           raw: ' + raw_text)
-                # print(' stripped_text: ' + stripped_text + '\n')
-            else:
-                # probably last word is cut off
-                stripped_text = stripped_text.rsplit(' ', 1)[0]
-        if rt:
-            index_trim = len('RT : ')
-            stripped_text = stripped_text[index_trim:len(stripped_text)]
-            index_offset += index_trim
-
-        dropped_chars = 0
-        for s in self.drop_chars:
-            i = 0
-            while True:
-                i = stripped_text.find(s, i)
-                if i == -1:
-                    break
-                stripped_text = stripped_text[0:i] + stripped_text[i + len(s):len(stripped_text)]
-            if s in stripped_text:
-                stripped_text = stripped_text.replace(s, '')
-                dropped_chars += 1
-        for (find, replace) in self.replace_words:
-            i = 0
-            while True:
-                i = stripped_text.find(find, i)
-                if i == -1:
-                    break
-                stripped_text = stripped_text[0:i] + replace + stripped_text[i+len(find):len(stripped_text)]
-        # remove duplicate spaces
-        stripped_text = re_spaces.sub(' ', stripped_text)
-        keywords = [word for word in stripped_text.split(' ') if word not in self.stopwords]
-        if '.' in keywords:
-            raise ValueError()
-
-        # check input assertions
-        assert raw_data['retweet_count'] == 0
-        assert raw_data['retweeted'] == False
-        if 'retweeted_status' in raw_data:
-            assert not raw_data['retweeted_status']['retweeted']
-            assert len(raw_data['entities']['user_mentions']) > 0
-            first_mention = raw_data['entities']['user_mentions'][0]['screen_name']
-            assert raw_data['text'].lower().startswith(('RT @' + first_mention + ': ').lower())
-            assert raw_data['text'][3:4] == '@'
-        for um in raw_data['entities']['user_mentions']:
-            assert len(um['indices']) == 2
-            i_start = um['indices'][0] + 1
-            i_end = um['indices'][1]
-            assert i_end - i_start > 0
-            assert raw_data['text'][i_start - 1:i_start] == '@'
-            assert um['screen_name'].lower() == raw_data['text'][i_start:i_end].lower()
-
         # source
         if raw_data['source'] == '':
             source = 'unknown'
@@ -177,7 +183,8 @@ class Preprocessor:
         source_url = source_match.group(2)
         if source not in self.tweet_sources:
             self.tweet_sources.add(source)
-            print("raw_source: %s\n source: %s\n source_url: %s" % (raw_data['source'], source, source_url))
+            # print newly found source
+            # print("Found new source:\n raw_source: %s\n source: %s\n source_url: %s" % (raw_data['source'], source, source_url))
         if source == 'Twitter Web Client':
             source = 'web_client'
         elif source == 'Twitter for Android':
@@ -195,6 +202,160 @@ class Preprocessor:
             source = source.lower().split('.')[0]
             source = '3party_' + source
 
+        #
+        # text processing
+        #
+        raw_text = str(raw_data['text'])  # the original
+        text = raw_text  # as much like the original
+        normalized_text = raw_text  # as much normalized
+
+        if __debug__:
+            # check for duplicate tweets
+            if id in self.tweet_texts:
+                previously_found_text = self.tweet_texts[id]
+                if previously_found_text != raw_text:
+                    raise ValueError("Tweet with same ID but different text found")
+                else:
+                    # skip tweets with same text and id
+                    self.tweet_n_duplicate += 1
+                    return None
+            else:
+                self.tweet_texts[id] = raw_text
+
+        #
+        # remove entities (stripped_text)
+        # these are given in the original indices, so should be done first on the `normalized_text`
+        #
+        index_offset = 0
+        strip_indices = []
+        for e_type in raw_data['entities']:
+            for e in raw_data['entities'][e_type]:
+                strip_indices.append((e['indices'][0], e['indices'][1],))
+        strip_indices.sort(key=itemgetter(0))
+        for (index_start, index_end) in strip_indices:
+            normalized_text = normalized_text[:index_start - index_offset] + normalized_text[index_end - index_offset:]
+            index_offset += index_end - index_start
+
+        # replace chars (stripped_text, text)
+        for (find, replace) in self.replace_chars:
+            i = 0
+            while True:
+                i = text.find(find, i)
+                if i == -1:
+                    break
+                text = text[0:i] + replace + text[i + len(find):]
+            i = 0
+            while True:
+                i = normalized_text.find(find, i)
+                if i == -1:
+                    break
+                normalized_text = normalized_text[:i] + replace + normalized_text[i + len(find):]
+        # lowercase
+        normalized_text = normalized_text.strip().lower()
+        # ends_dots
+        ends_dots = normalized_text.endswith('…') or normalized_text.endswith('...')
+        if ends_dots:
+            # strip differently with end_dots
+            if normalized_text.endswith('…'):
+                normalized_text = normalized_text[0:len(normalized_text) - 1]
+            if normalized_text.endswith('...'):
+                normalized_text = normalized_text[0:len(normalized_text) - 3]
+            if normalized_text.endswith(' '):
+                # Only strip the last '...'
+                pass
+            else:
+                # Strip the last '...' and the last word, as it was probably cut off
+                normalized_text = normalized_text.rsplit(' ', 1)[0]
+        # strip 'RT : '
+        if rt:
+            assert normalized_text.startswith('rt : ')
+            normalized_text = normalized_text[5:]
+            index_offset += 5
+            text = text[6 + len(raw_data['entities']['user_mentions'][0]['screen_name']):]
+        # replace words
+        for (find, replace) in self.replace_words:
+            i = 0
+            while True:
+                i = normalized_text.find(find, i)
+                if i == -1:
+                    break
+                # print('replacing %s in %s' % (find, raw_text.replace('\n', ' ')))
+                normalized_text = normalized_text[0:i] + replace + normalized_text[i + len(find):]
+        # remove special chars
+        dropped_chars = 0
+        for s in self.drop_chars:
+            i = 0
+            while True:
+                i = normalized_text.find(s, i)
+                if i == -1:
+                    break
+                normalized_text = normalized_text[0:i] + normalized_text[i + len(s):len(normalized_text)]
+            if s in normalized_text:
+                normalized_text = normalized_text.replace(s, '')
+                dropped_chars += 1
+
+        # remove duplicate spaces (text)
+        text = re_whitespace.sub(text, ' ')
+        print("Tweet (%d)\n     raw_text: %s\n         text: %s\n   normalized: %s" % (self.i-1, raw_text.replace('\n', '<NEWLINE>'), text, normalized_text))
+
+        #
+        # text features
+        #
+
+        # newline_count
+        newline_count = raw_text.count('\n')
+
+        # questionmark
+        questionmark = '?' in raw_text
+
+        # tokenization/keywords
+        keywords = [word for word in re_whitespace.split(normalized_text) if word not in self.stopwords]
+
+        # quotes
+        quotations = re_quotations.findall(raw_text)
+        if len(quotations) > 0:
+            new = False
+            for quote in quotations:
+                if quote not in self.quotations:
+                    self.quotations.add(quote)
+                    new = True
+            if new:
+                # print('found %s in %s' % (str(quotations).ljust(60), raw_text.replace('\n', ' ')))
+                pass
+
+        # spelling mistakes, based on https://github.com/mattalcock/blog/blob/master/2012/12/5/python-spell-checker.rst
+        # correct_raw = [word for word in re_whitespace.split(raw_text) if word.lower() == correct(word).lower()]
+        # correct_txt = [word for word in re_whitespace.split(text) if word.lower() == correct(word).lower()]
+        # correct_nor = [word for word in re_whitespace.split(normalized_text) if word.lower() == correct(word).lower()]
+        # print("       errors: %.3f, %.3f, %.3f" % (
+        #     float(len(correct_raw))/len(re_whitespace.split(raw_text)),
+        #     float(len(correct_txt))/len(re_whitespace.split(text)),
+        #     float(len(correct_nor))/len(re_whitespace.split(normalized_text))
+        # ))
+        # print("   raw errors: %s" % (correct_raw))
+        # print("   txt errors: %s" % (correct_txt))
+        # print("   nor errors: %s" % (correct_nor))
+
+        # find currency
+        currency_matches = re_currency_matches(normalized_text)
+        # print currency
+        # if len(currency_matches) > 0:
+        #     print('%s found in: %s' % (currency_matches, raw_text.replace('\n', ' ')))
+
+        number_match = re.search(r'\d\d*(?:[.]\d+)?', normalized_text)
+        if number_match and len(currency_matches) == 0:
+            number = int(number_match.group())
+            if number == 2016 or number < 10:
+                pass
+            elif number_match.end() + 1 < len(normalized_text) and normalized_text[number_match.end() + 1] == '%':
+                pass
+            else:
+                pass
+                # print('%s found in: %s' % (currency_matches, raw_text.replace('\n', ' ')))
+
+        # find dates
+        date_matches = re_date_matches(normalized_text)
+
         self.tweet_n_unique += 1
         return {
             'id': id,
@@ -210,6 +371,7 @@ class Preprocessor:
             'keywords': keywords,
             'dropped': dropped_chars,
             'source': source,
+            'amounts': currency_matches
         }
 
     def __str__(self):
@@ -260,7 +422,7 @@ class Preprocessor:
                 offset -= (m.end() - m.start())
             assert re_unicode_decimal.search(description) is None
             description = re_html.sub(' ', description)
-        description = re_spaces.sub(' ', description).strip()
+        description = re_whitespace.sub(' ', description).strip()
         if description == '':
             raise ValueError()
 
@@ -304,12 +466,9 @@ def pp_tweets():
 
     pre_processor = Preprocessor()
     try:
-        # tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, filename_prefix='20161006___1.20', item_offset=140, item_count=1)
-        # tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, filename_prefix='xaa') + read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, filename_postfix='___0.0.valid.json')
-        # print(pre_processor.tweet_sources)
+        tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, filename_postfix='5.valid.json')
         # tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, item_offset=153810)
-        tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir)
-        tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, item_offset=153810, filename_prefix='20161022___0')
+        # tweets = read_json_array_from_files(pre_processor.pp_tweet_data, os.path.join(inputdir, 'elections-23-10-raw'), item_offset=1, filename_prefix='20161023__1')
         print(pre_processor.tweet_sources)
         csv_write(os.path.join(config.PROJECT_DIR, 'pre-test.csv'), tweets)
     except Exception as e:
