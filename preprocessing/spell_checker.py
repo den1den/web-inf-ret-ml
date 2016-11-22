@@ -6,6 +6,8 @@ import collections
 
 import nltk.corpus as corpus
 
+from config.config import SPELLING
+
 corpa = []
 
 
@@ -23,14 +25,23 @@ def _read_corpus(c):
 def train():
     model = collections.defaultdict(lambda: 1)
     for corpus in corpa:
-        for f in corpus:
-            model[f] += 1
+        for w in corpus:
+            model[w] += 1
+    for w in ('Hillary', 'Trump', 'trump', 'hillary', 'RT', 'rt', 'clinton', 'Clinton',
+        'Tweet',
+        'tweet',
+        'Twitter',
+        'twitter',
+        'retweet',
+        'hashtag',
+              ):
+        model[w] += 1
     return model
 
-
-_read_corpa()
-NWORDS = train()
-alphabet = 'abcdefghijklmnopqrstuvwxyz'
+if SPELLING:
+    _read_corpa()
+    NWORDS = train()
+    alphabet = 'abcdefghijklmnopqrstuvwxyz'
 
 
 def edits1(word):
@@ -58,15 +69,11 @@ def correct(word):
 def known_correct(word):
     r = known([word])
     if r:
-        print("-> %s" % r)
-        return 1
+        return 0, r
     r = known(edits1(word))
     if r:
-        print("-> %s" % r)
-        return 1
+        return 1, r
     r = known_edits2(word)
     if r:
-        print("-> %s" % r)
-        return 1
-    print("-> %s" % [])
-    return 0
+        return 2, r
+    return 3, []

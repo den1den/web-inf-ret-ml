@@ -17,3 +17,7 @@ class TestSpellChecker(TestCase):
         print(known_correct('water'))
         print(known_correct('wAter'))
         print(known_correct('WATER'))
+        print(known_correct('Tweet'))
+        print(known_correct('tweet'))
+        print(known_correct('retweer'))
+        print(known_correct('hashtag'))
