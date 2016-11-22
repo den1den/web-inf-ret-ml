@@ -1,15 +1,20 @@
 import os
 import re
+import string
+import time
 from operator import itemgetter
-from datetime import datetime
 from urllib.parse import urlparse
-from config import config
-from inputoutput.input import csv_write, read_json_array_from_files
+
 from nltk.corpus import stopwords
+
+from config import config
+from inputoutput.input import csv_write, read_json_array_from_files, Reader
+from preprocessing.spell_checker import known_correct
 
 re_whitespace = re.compile(r'\s+')
 re_html = re.compile(r'<[^>]+>')
 re_unicode_decimal = re.compile(r'&#(\d{2,4});|&([a-z]+);')
+re_unicode = re.compile(r'[^\x00-\x7f]')
 re_html_a_tag = re.compile(r'<a href="([^"]+)"[^>]*>(.+)</a>', flags=re.IGNORECASE)
 re_next_word = re.compile(r'\s*(\w+)(…|[.][.][.])?')
 CURRENCY_PATTERN = r'[$€](\d+(?:[,]\d+)*(?:[.]\d+)?)'
@@ -74,7 +79,7 @@ class Preprocessor:
         self.quotations = set()
 
         self.stopwords = set(stopwords.words('english'))
-        self.drop_chars = [',', '.', '#', '@', '[', ']', '{', '}', '"', ':', '!', "'", '?']
+        self.drop_chars = [',', '.', '#', '@', '[', ']', '{', '}', '"', ':', '!', "'", '?', '\\']
         self.replace_chars = [
             ('&amp;', 'and'),
             ('&gt;', '>'),
@@ -94,7 +99,7 @@ class Preprocessor:
         self.article_ids = set()
         self.article_descriptions = set()
 
-    def pp_tweet_data(self, raw_data):
+    def pp_tweet_data(self, raw_data, reader:Reader):
         """ process a tweet for feature extraction
         :param raw_data
         :return: preprocessed_data
@@ -153,19 +158,19 @@ class Preprocessor:
                 assert um['screen_name'].lower() == raw_data['text'][i_start:i_end].lower()
 
         # tweet id
-        id = int(raw_data['id'])
+        id = 't' + str(raw_data['id'])
 
         # user_id
         if 'user' not in raw_data:
-            user_id = -1
+            user_id = '-1'
         else:
-            user_id = raw_data['user']['id']
+            user_id = str(raw_data['user']['id'])
 
         # rt
         rt = 'retweeted_status' in raw_data
 
         # @
-        mentions = [um['id'] for um in raw_data['entities']['user_mentions']]
+        mentions = [str(um['id']) for um in raw_data['entities']['user_mentions']]
 
         # urls
         urls = [url['expanded_url'] for url in raw_data['entities']['urls']]
@@ -174,34 +179,38 @@ class Preprocessor:
         hashtags = [hashtag['text'] for hashtag in raw_data['entities']['hashtags']]
 
         # source
-        if raw_data['source'] == '':
-            source = 'unknown'
-        source_match = re_html_a_tag.match(raw_data['source'])
-        if source_match is None:
-            raise ValueError("Could not identify source: `%s` at %d" % (raw_data['source'], self.i))
-        source = source_match.group(1)
-        source_url = source_match.group(2)
-        if source not in self.tweet_sources:
-            self.tweet_sources.add(source)
-            # print newly found source
-            # print("Found new source:\n raw_source: %s\n source: %s\n source_url: %s" % (raw_data['source'], source, source_url))
-        if source == 'Twitter Web Client':
-            source = 'web_client'
-        elif source == 'Twitter for Android':
-            source = 'mobile_android'
-        elif source == 'Twitter for iPhone':
-            source = 'mobile_iPhone'
-        elif source == 'Twitter for iPad':
-            source = 'mobile_iPad'
-        elif source == 'Twitter for BlackBerry':
-            source = 'mobile_blackberry'
-        elif source.startswith('Mobile Web ('):
-            source = 'mobile_webclient'
+        source = raw_data['source']
+        if source == '':
+            source_url = ''
+            source_type = 'unknown'
         else:
-            # probably web
-            source = source.lower().split('.')[0]
-            source = '3party_' + source
+            source_match = re_html_a_tag.match(source)
+            if source_match is None:
+                raise ValueError("Could not identify source: `%s` at %d" % (source, self.i - 1))
+            source_url = source_match.group(1)
+            source = source_match.group(2)
+            if source not in self.tweet_sources:
+                self.tweet_sources.add(source)
+                # print newly found source
+                # print("Found new source:\n raw_source: %s\n source: %s\n source_url: %s" % (raw_data['source'], source, source_url))
+            if source == 'Twitter Web Client':
+                source_type = 'web_client'
+            elif source == 'Twitter for Android':
+                source_type = 'mobile'
+            elif source == 'Twitter for iPhone':
+                source_type = 'mobile'
+            elif source == 'Twitter for iPad':
+                source_type = 'mobile'
+            elif source == 'Twitter for BlackBerry':
+                source_type = 'mobile'
+            elif source.startswith('Mobile Web ('):
+                source_type = 'mobile'
+            else:
+                # probably web
+                source_type = 'other'
 
+        if id == 't783506351360139264':
+            pass
         #
         # text processing
         #
@@ -265,10 +274,18 @@ class Preprocessor:
                 pass
             else:
                 # Strip the last '...' and the last word, as it was probably cut off
-                normalized_text = normalized_text.rsplit(' ', 1)[0]
+                #FIXME: decide when to skip these things
+                if len(normalized_text) < 25:
+                    # print(" note: not skipping last word in: %s" % raw_text.replace('\n', ''))
+                    pass # probably not cut off
+                else:
+                    # print(" note: skipping last word in: %s" % raw_text.replace('\n', ''))
+                    normalized_text = normalized_text.rsplit(' ', 1)[0]
         # strip 'RT : '
         if rt:
-            assert normalized_text.startswith('rt : ')
+            if not normalized_text.startswith('rt : '):
+                #FIXME
+                raise ValueError("Could not strip RT")
             normalized_text = normalized_text[5:]
             index_offset += 5
             text = text[6 + len(raw_data['entities']['user_mentions'][0]['screen_name']):]
@@ -290,13 +307,22 @@ class Preprocessor:
                 if i == -1:
                     break
                 normalized_text = normalized_text[0:i] + normalized_text[i + len(s):len(normalized_text)]
-            if s in normalized_text:
-                normalized_text = normalized_text.replace(s, '')
                 dropped_chars += 1
+        pre_unicodefilter_size = len(normalized_text)
+        normalized_text = ''.join(filter(lambda x: x in string.printable, normalized_text))
+        dropped_chars += pre_unicodefilter_size - len(normalized_text)
 
-        # remove duplicate spaces (text)
-        text = re_whitespace.sub(text, ' ')
-        print("Tweet (%d)\n     raw_text: %s\n         text: %s\n   normalized: %s" % (self.i-1, raw_text.replace('\n', '<NEWLINE>'), text, normalized_text))
+        # remove duplicate spaces and unwanted characters (text)
+        text = ''.join(filter(lambda x: x in string.printable, text))
+        if '\\' in text:
+            text = text.replace('\\', '')
+        try:
+            text = re_whitespace.sub(text, ' ')
+        except Exception:
+            #FIXME: why does this fail?
+            raise e
+        if config.SPELLING:
+            print("Tweet (%d)\n     raw_text: %s\n         text: %s\n   normalized: %s" % (self.i-1, raw_text.replace('\n', '<NEWLINE>'), text, normalized_text))
 
         #
         # text features
@@ -306,13 +332,13 @@ class Preprocessor:
         newline_count = raw_text.count('\n')
 
         # questionmark
-        questionmark = '?' in raw_text
+        questionmark = '?' in text
 
         # tokenization/keywords
         keywords = [word for word in re_whitespace.split(normalized_text) if word not in self.stopwords]
 
         # quotes
-        quotations = re_quotations.findall(raw_text)
+        quotations = re_quotations.findall(text)
         if len(quotations) > 0:
             new = False
             for quote in quotations:
@@ -323,18 +349,21 @@ class Preprocessor:
                 # print('found %s in %s' % (str(quotations).ljust(60), raw_text.replace('\n', ' ')))
                 pass
 
-        # spelling mistakes, based on https://github.com/mattalcock/blog/blob/master/2012/12/5/python-spell-checker.rst
-        # correct_raw = [word for word in re_whitespace.split(raw_text) if word.lower() == correct(word).lower()]
-        # correct_txt = [word for word in re_whitespace.split(text) if word.lower() == correct(word).lower()]
-        # correct_nor = [word for word in re_whitespace.split(normalized_text) if word.lower() == correct(word).lower()]
-        # print("       errors: %.3f, %.3f, %.3f" % (
-        #     float(len(correct_raw))/len(re_whitespace.split(raw_text)),
-        #     float(len(correct_txt))/len(re_whitespace.split(text)),
-        #     float(len(correct_nor))/len(re_whitespace.split(normalized_text))
-        # ))
-        # print("   raw errors: %s" % (correct_raw))
-        # print("   txt errors: %s" % (correct_txt))
-        # print("   nor errors: %s" % (correct_nor))
+        from config.config import SPELLING
+        if SPELLING:
+            # spelling mistakes, based on https://github.com/mattalcock/blog/blob/master/2012/12/5/python-spell-checker.rst
+            #TODO: check how to interpet these results
+            correct_raw = [known_correct(word) for word in re_whitespace.split(raw_text)]
+            correct_txt = [known_correct(word) for word in re_whitespace.split(text)]
+            correct_nor = [known_correct(word) for word in re_whitespace.split(normalized_text)]
+            print(" error rating: %d/%d, %d/%d, %d/%d" % (
+                sum([1 << s for (s, w) in correct_raw]), len(re_whitespace.split(raw_text)),
+                sum([1 << s for (s, w) in correct_txt]), len(re_whitespace.split(text)),
+                sum([1 << s for (s, w) in correct_nor]), len(re_whitespace.split(normalized_text))
+            ))
+            print("   raw errors: %s\n   raw errors: %s" % ([s for (s, w) in correct_raw], [w for (s, w) in correct_raw]))
+            print("   txt errors: %s\n   txt errors: %s" % ([s for (s, w) in correct_txt], [w for (s, w) in correct_txt]))
+            print("   nor errors: %s\n   nor errors: %s" % ([s for (s, w) in correct_nor], [w for (s, w) in correct_nor]))
 
         # find currency
         currency_matches = re_currency_matches(normalized_text)
@@ -353,13 +382,15 @@ class Preprocessor:
                 pass
                 # print('%s found in: %s' % (currency_matches, raw_text.replace('\n', ' ')))
 
-        # find dates
+        #TODO: find dates
         date_matches = re_date_matches(normalized_text)
 
         self.tweet_n_unique += 1
         return {
             'id': id,
+            'filename': '%s:%s' % (os.path.basename(reader.current_file), reader.i),
             'full_text': raw_text,
+            'text': text,
             'rt': rt,
             'mentions': mentions,
             'urls': urls,
@@ -369,9 +400,12 @@ class Preprocessor:
             'user_id': user_id,
             'questionmark': questionmark,
             'keywords': keywords,
+            'keywords_length': len(keywords),
             'dropped': dropped_chars,
-            'source': source,
-            'amounts': currency_matches
+            'source_type': source_type,
+            'source_url': source_url,
+            'currencies': currency_matches,
+            'quotations': quotations
         }
 
     def __str__(self):
@@ -466,11 +500,33 @@ def pp_tweets():
 
     pre_processor = Preprocessor()
     try:
-        tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, filename_postfix='5.valid.json')
+        # tweets_reader = Reader(pre_processor.pp_tweet_data, inputdir, item_offset=0, filename_prefix='20161005___1.24.valid.json')
+        tweets_reader = Reader(pre_processor.pp_tweet_data, inputdir, item_offset=0)
+        tweets_reader.supply_reader = True
+        tweets = tweets_reader.read()
         # tweets = read_json_array_from_files(pre_processor.pp_tweet_data, inputdir, item_offset=153810)
         # tweets = read_json_array_from_files(pre_processor.pp_tweet_data, os.path.join(inputdir, 'elections-23-10-raw'), item_offset=1, filename_prefix='20161023__1')
         print(pre_processor.tweet_sources)
-        csv_write(os.path.join(config.PROJECT_DIR, 'pre-test.csv'), tweets)
+        csv_write(os.path.join(config.PROJECT_DIR, 'pp-tweets-%d.csv' % time.time()), tweets,
+                  columns=('id',
+                           'filename',
+                           'full_text',
+                           'text',
+                           'rt',
+                           'mentions',
+                           'urls',
+                           'hashtags',
+                           'newline_count',
+                           'ends_dots',
+                           'user_id',
+                           'questionmark',
+                           'keywords',
+                           'keywords_length',
+                           'dropped',
+                           'source_type',
+                           'source_url',
+                           'currencies',
+                           'quotations'))
     except Exception as e:
         print(pre_processor.tweet_sources)
         raise e
@@ -484,7 +540,7 @@ def pp_articles():
     pre_processor = Preprocessor()
     # articles = read_json_array_from_files(pre_processor.pp_article_data, inputdir, filename_postfix='20161021_4.json', item_offset=7)
     articles = read_json_array_from_files(pre_processor.pp_article_data, inputdir, filename_postfix='.json', item_offset=0)
-    csv_write(os.path.join(config.PROJECT_DIR, 'pre-test-articles.csv'), articles)
+    csv_write(os.path.join(config.PROJECT_DIR, 'pp-articles-%s.csv' % time.time()), articles)
 
 
 if __name__ == '__main__':

@@ -6,7 +6,7 @@ import os
 
 from config import config
 from config.config import PCLOUD_BUFFER_DIR
-from inputoutput.input import get_tweets, get_tusers, get_articles, read_json_array_from_files, csv_write, csv_read
+from inputoutput.input import get_tweets, get_tusers, get_articles, csv_write, csv_read
 
 
 class TestIOMethods(TestCase):
