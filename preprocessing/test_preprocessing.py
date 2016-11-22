@@ -50,6 +50,17 @@ class TestPreprocessing(TestCase):
         assert re_currency_matches('Pardon-$5mill Removal from terror list-$3mill Drone strike-$10mill Sp') == [5000000, 3000000, 10000000]
         assert re_currency_matches('receives $10s of millions') == [10]
 
+    def test_currency_regex_no_number(self):
+        #FIXME
+        assert re_currency_matches('loses $1 in the first place?" ') == [1]
+        assert re_currency_matches('loses 1 dollar in the first place?" ') == [1]
+        assert re_currency_matches('loses a dollar in the first place?" ') == [1]
+        assert re_currency_matches('loses one dollar in the first place?" ') == [1]
+        assert re_currency_matches('loses a thousand dollars in the first place?" ') == [1000]
+        assert re_currency_matches('loses a million dollars in the first place?" ') == [1000000]
+        assert re_currency_matches('loses a billion dollars in the first place?" ') == [1000000000]
+        assert re_currency_matches('loses a trillion dollars in the first place?" ') == [1000000000000]
+
 
 class TestPreprocessedData(TestCase):
 
