@@ -8,7 +8,7 @@ from abc import abstractmethod, ABCMeta
 from os import listdir
 
 from inputoutput.input import clean_output_dir
-from preprocessing.preprocess import re_whitespace
+from preprocessing.preprocess_util import re_whitespace
 
 WRITE_OUTPUT = True
 

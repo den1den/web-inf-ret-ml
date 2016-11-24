@@ -3,8 +3,9 @@ from unittest import TestCase
 
 from config import config
 from inputoutput.input import get_tweets, get_articles, read_json_array_from_files, csv_write
-from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_whitespace, re_currency, re_currency_matches, \
-    remove_unicode, replace_whitespaces, replace_nonalpha_in_string
+from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_whitespace, re_currency, remove_unicode, replace_whitespaces, replace_nonalpha_in_string
+from preprocessing.preprocess_util import re_currency_matches, remove_unicode, replace_whitespaces, \
+    replace_nonalpha_in_string, re_whitespace, re_unicode_decimal
 
 
 class TestPreprocessing(TestCase):
