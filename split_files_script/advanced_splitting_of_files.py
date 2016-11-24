@@ -7,6 +7,7 @@ import os
 from abc import abstractmethod, ABCMeta
 from os import listdir
 
+from inputoutput.input import clean_output_dir
 from preprocessing.preprocess import re_whitespace
 
 WRITE_OUTPUT = True
@@ -16,6 +17,7 @@ buffer = 1 << 25
 buffer = 1 << 22
 buffer = 1 << 4
 
+tweets_per_file_target = 400
 
 class Parser(metaclass=ABCMeta):
     items = []
@@ -41,15 +43,7 @@ class Parser(metaclass=ABCMeta):
         self.close()
 
     def clean_output_dir(self):
-        # Delete previous
-        if not os.path.exists(self.base_output_path):
-            os.makedirs(self.base_output_path)
-            return
-        for f in listdir(self.base_output_path):
-            if f.endswith('.valid.json'):
-                old_filepath = os.path.join(self.base_output_path, f)
-                print("removing %s" % old_filepath)
-                os.remove(old_filepath)
+        clean_output_dir(self.base_output_path, '.valid.json')
 
     def output(self, force=False):
         if force or len(self.items) >= items_per_file_target:
@@ -119,6 +113,8 @@ class NaiveParser(Parser):
 
 
 class NewLineSeparatedParser(Parser):
+    seen_ids = set()
+
     def parse_file(self, fp):
         n = 0
         lines = fp.readlines()
@@ -139,10 +135,18 @@ class NewLineSeparatedParser(Parser):
             line = line[1:]
         if line.endswith('}]'):
             line = line[:-1]
+        if line.startswith('][{'):
+            line = line[2:]
         if not (line.startswith('{') and line.endswith('}')):
             print('error at line %d: %s ... %s' % (n, original_line[:10], original_line[-10:]))
             return
-        self.items.append(json.loads(line))
+        data = json.loads(line)
+        if 'id' in data:
+            if data['id'] in self.seen_ids:
+                print("skipping duplicate id")
+            else:
+                self.seen_ids.add(data['id'])
+        self.items.append(data)
         self.output()
 
 
@@ -239,7 +243,7 @@ class Processor:
 
 
 if __name__ == '__main__':
-    dir_to_process = 'E:\\pCloud_buffer\\raw-tweets\\elections-26-10-raw\\'
-    p = NewLineSeparatedParser(dir_to_process, '20161026', os.path.join(dir_to_process, 'valid'))
+    dir_to_process = r'E:\pCloud_buffer\raw-tweets\elections-29-10-raw'
+    p = NewLineSeparatedParser(dir_to_process, '20161029', os.path.join(dir_to_process, 'valid'))
     p.clean_output_dir()
     p()

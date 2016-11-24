@@ -13,14 +13,14 @@ TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingUser')
 ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingRSS')
 
 
-def get_tweets(tweets_n=None, file_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
+def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
     """
     Read in tweets from files
     see input.read_json_array_from_files()
     :rtype [Tweet]
     """
-    r = Reader(to_tweet, dir_path, tweets_n, 0, file_n, file_offset, filename_prefix)
-    return r.read()
+    r = InputReader(dir_path, file_offset=file_offset, filename_prefix=filename_prefix)
+    return r.read_all(tweets_n, to_tweet)
 
 
 def to_tweet(preprocessed_data):
@@ -28,13 +28,13 @@ def to_tweet(preprocessed_data):
     return Tweet(preprocessed_data)
 
 
-def get_tusers(users_n=None, file_n=None, file_offset=0, dir_path=TWEET_USERS_DIR, filename_prefix=''):
+def get_tusers(users_n=None, file_offset=0, dir_path=TWEET_USERS_DIR, filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
-    r = Reader(to_tuser, dir_path, users_n, 0, file_n, file_offset, filename_prefix)
-    return r.read()
+    r = InputReader(dir_path, file_offset=file_offset, filename_prefix=filename_prefix)
+    return r.read_all(users_n, to_tuser)
 
 
 def to_tuser(preprocessed_data):
@@ -42,14 +42,13 @@ def to_tuser(preprocessed_data):
     return TUser(preprocessed_data)
 
 
-def get_articles(articles_n=None, file_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix=''):
+def get_articles(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
-    # filename_prefix = '2016100'
-    r = Reader(to_article, dir_path, articles_n, 0, file_n, file_offset, filename_prefix)
-    return r.read()
+    r = InputReader(dir_path, file_offset=file_offset, filename_prefix=filename_prefix)
+    return r.read_all(articles_n, to_article)
 
 
 def to_article(preprocessed_data):
@@ -65,7 +64,7 @@ def as_id_dict(data):
     return {d.id: d for d in data}
 
 
-class Reader():
+class InputReader:
     """
     Loads in json arrays from a directory recursively
     :param d2o: function from dict -> object to sto
@@ -81,119 +80,169 @@ class Reader():
     :param file_alternation_index:
     :param give_filename_to_d2o: provide extra argument `filename` to d2o function
     """
-    supply_reader = False
 
-    def __init__(self, dict_to_obj, dir_path, item_count=None, item_offset=0, file_count=None, file_offset=0,
+    def __init__(self, dir_path, item_offset=0, file_offset=0,
                  filename_prefix='', filename_postfix='.json',
-                 dir_name_prefix='', file_alternation=1, file_alternation_index=0):
-        self.dict_to_obj = dict_to_obj
-        self.dir_path = dir_path
-        self.item_count = item_count
+                 dir_name_prefix='',
+                 file_alternation=1, file_alternation_index=0):
         self.item_offset = item_offset
-        self.file_count = file_count
         self.file_offset = file_offset
         self.filename_prefix = filename_prefix
         self.filename_postfix = filename_postfix
         self.dir_name_prefix = dir_name_prefix
         self.file_alternation = file_alternation
         self.file_alternation_index = file_alternation_index
+        self.dir_path = dir_path
+        self.os_walk_iter = iter(os.walk(dir_path))
 
-    def read(self):
         self.filecounter = 0
-        self.items = []
+        self.nxt_index = 1
+        self.raw_items = []
+        self.i = 0
+
+    def read_next_file(self):
+        """
+        Reads in the next file, or returns False when end is reached
+        """
+        while True:
+            filename = self._next_file()
+            if filename is None:
+                break
+
+            lowercase_filename = filename.lower()
+            if not lowercase_filename.endswith(self.filename_postfix):
+                # skip non matching files
+                continue
+            if not lowercase_filename.startswith(self.filename_prefix):
+                # skip non matching files
+                continue
+
+            # file matches
+            self.filecounter += 1
+            if self.filecounter < self.file_offset:
+                # skip file
+                continue
+
+            # Read file
+            self.current_file = os.path.join(self.dir_path, filename)
+            try:
+                with open(self.current_file, encoding='utf8') as data_file:
+                    self.raw_items = json.load(data_file)
+                self.nxt_index = 0
+                print("Info: Input file read: %s" % self.current_file)
+                return True
+            except Exception as e:
+                print("Error: could not json.load file %s %s" % (self.current_file, e))
+                continue
+        return False
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        while len(self.raw_items) <= self.nxt_index:
+            if self.read_next_file():
+                pass
+            else:
+                raise StopIteration()
+        self.nxt_index += 1
+        self.i += 1
+        return self.raw_items[self.nxt_index - 1]
+
+    def read_all(self, function=lambda x:x, item_count=None):
+        print(
+            "Info: read all entries (with entry offset %d) from all `%s*%s` files (with file offset %d) from `%s`" %
+            (self.item_offset, self.filename_prefix, self.filename_postfix, self.file_offset, self.dir_path)
+        )
+
+        t0 = time.time()
+        items = []
+        for item in self:
+            try:
+                items.append(function(item))
+            except Exception as e:
+                print("Error: could not apply function to file %s:%d %s" % (self.current_file, self.i, e))
+                pass
+        t1 = time.time()
+        duration = t1 - t0
+
+        if item_count is not None and len(items) != item_count:
+            raise AssertionError("Error: could only read %d of %d entries" % (len(items), item_count))
 
         print(
-            "Input: Start reading %s entries (with entry offset %d) from %s `%s*%s` files (with file offset %d) from `%s`" %
-            (self.item_count or 'all', self.item_offset, self.file_count or 'all', self.filename_prefix,
-             self.filename_postfix, self.file_offset,
-             self.dir_path,))
-
-        # Start walking the filesystem
-        t0 = time.time()
-        for self.dir_path, dn, fn in os.walk(self.dir_path):
-            lowercase_dir_name = os.path.basename(self.dir_path)
-            if not lowercase_dir_name.startswith(self.dir_name_prefix):
-                continue
-            for filename in fn:
-                # Check if file should be read
-                lowercase_filename = filename.lower()
-                if not lowercase_filename.endswith(self.filename_postfix)\
-                        or not lowercase_filename.startswith(self.filename_prefix):
-                    continue
-                self.filecounter += 1
-                if self.filecounter < self.file_offset:
-                    continue
-                if self.file_count is not None and self.filecounter - self.file_offset == self.file_count:
-                    break
-
-                # Read file
-                self.current_file = os.path.join(self.dir_path, filename)
-                if not self._proccess_file():
-                    break
-
-            if len(self.items) == self.item_count:
-                break
-            if self.filecounter is not None and self.filecounter - self.file_offset == self.file_count:
-                break
-        t1 = time.time()
-
-        if self.item_count is not None and len(self.items) != self.item_count:
-            raise AssertionError(
-                "Input error: Could only read %d of %d entries" % (len(self.items), self.item_count))
-
-        if self.filecounter == 0:
-            raise IOError("Input error: No files read!")
-
-        duration = t1 - t0
-        print("Input ok: %d entries read from %d files (%.2f sec per file, %.0f seconds in total)\n" % (
-            len(self.items), self.filecounter, duration / self.filecounter, duration))
-        return self.items
-
-    def _proccess_file(self):
-        """"Reads from filepath to an array of tweets"""
-        assert self.item_count != 0
-
-        try:
-            with open(self.current_file, encoding='utf8') as data_file:
-                plain_objects = json.load(data_file)
-            print("Input file read: %s" % self.current_file)
-        except Exception as e:
-            print("Could not json.load file %s" % self.current_file)
-            raise e
-        if self.item_offset > len(plain_objects):
-            print("Warning: read in file of %d objects while offset of %d is bigger then entry count" % (
-                len(plain_objects), self.item_offset))
-            self.item_offset -= plain_objects
-            return True
-
-        self.i = 0
-        end_index = len(plain_objects) if self.item_count is None else self.item_offset + self.item_count
-        for plain_object in plain_objects[self.item_offset:end_index]:
-            try:
-                if self.supply_reader:
-                    obj = self.dict_to_obj(plain_object, self)
-                else:
-                    obj = self.dict_to_obj(plain_object)
-            except Exception as e:
-                if 'text' in plain_object:
-                    print(plain_object['text'])
-                if 'id' in plain_object:
-                    print("id = %s" % plain_object['id'])
-                raise ValueError(self.current_file, plain_object, e)
-            if obj is not None:
-                self.items.append(obj)
-                self.i += 1
-                if self.item_count is not None and len(self.items) >= self.item_count:
-                    return False
-        return True
+            "Info: read %d entries read from %d files (%.2f sec per file, %.0f seconds in total)"
+            % (len(items), self.filecounter, duration / self.filecounter, duration)
+        )
+        return items
 
     def __str__(self, *args, **kwargs):
         return "file: %s at entry %d" % (self.current_file, self.i)
 
+    fn_iter = None
+    def _next_file(self):
+        if self.fn_iter is not None:
+            try:
+                return next(self.fn_iter)
+            except StopIteration:
+                pass
+        try:
+            self.dir_path, dn, fn = next(self.os_walk_iter)
+            lowercase_dir_name = os.path.basename(self.dir_path)
+            if not lowercase_dir_name.startswith(self.dir_name_prefix):
+                # skip non matching dirs
+                return self._next_file()
+            self.fn_iter = iter(fn)
+            return self._next_file()
+        except StopIteration:
+            return None
 
-def read_json_array_from_files(*args, **kwargs):
-    r = Reader(*args, **kwargs)
-    return r.read()
+
+class Writer:
+    def __init__(self, dir_path, base_filename, write_every=10000, clear_output_dir=False):
+        self.dir_path = dir_path
+        self.base_filename = base_filename
+        self.write_every = write_every
+        self.item_buffer = []
+        self.filecount = 0
+        if clear_output_dir:
+            clean_output_dir(self.dir_path)
+
+    def write(self, item):
+        self.item_buffer.append(item)
+        if len(self.item_buffer) >= self.write_every:
+            try:
+                self.write_to_file()
+            except Exception as e:
+                print("Error: could not write to %s %s" % (self.get_file_path(), e))
+                pass
+
+    def write_to_file(self):
+        filename = self.get_file_path()
+        json.dump(self.item_buffer, open(filename, 'w+', encoding='utf8'))
+        print("Info: written %d items to %s" % (len(self.item_buffer), filename))
+        self.filecount += 1
+        self.item_buffer = []
+
+    def get_file_path(self):
+        return os.path.join(self.dir_path, '%s_%s.json' % (self.base_filename, self.filecount))
+
+    def close(self):
+        self.write_to_file()
+
+
+class CSVWriter(Writer):
+    def __init__(self, dir_path, base_filename, columns, write_every=20000, clear_output_dir=False):
+        super().__init__(dir_path, base_filename, write_every, clear_output_dir)
+        self.columns = columns
+
+    def write_to_file(self):
+        filename = self.get_file_path()
+        csv_write(filename, self.item_buffer, self.columns)
+        self.filecount += 1
+        self.item_buffer = []
+
+    def get_file_path(self):
+        return os.path.join(self.dir_path, '%s_%s.csv' % (self.base_filename, self.filecount))
 
 
 def csv_write(filepath, items, columns=None):
@@ -237,3 +286,15 @@ def csv_read(filepath, column=None):
             items.append({header[i]: value for i, value in enumerate(item)})
     print("Info: %d items read from %s" % (len(items), filepath))
     return items
+
+
+def clean_output_dir(dir, filename_postfix=''):
+    # Delete previous
+    if not os.path.exists(dir):
+        os.makedirs(dir)
+        return
+    for f in os.listdir(dir):
+        if f.endswith(filename_postfix):
+            old_filepath = os.path.join(dir, f)
+            print("removing %s" % old_filepath)
+            os.remove(old_filepath)

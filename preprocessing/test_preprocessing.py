@@ -3,10 +3,40 @@ from unittest import TestCase
 
 from config import config
 from inputoutput.input import get_tweets, get_articles, read_json_array_from_files, csv_write
-from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_whitespace, re_currency, re_currency_matches
+from preprocessing.preprocess import Preprocessor, re_unicode_decimal, re_whitespace, re_currency, re_currency_matches, \
+    remove_unicode, replace_whitespaces, replace_nonalpha_in_string
 
 
 class TestPreprocessing(TestCase):
+    def test_replace_nonalpha_in_string(self):
+        assert replace_nonalpha_in_string('', '') == ''
+        assert replace_nonalpha_in_string('a', '') == 'a'
+        assert replace_nonalpha_in_string('!', '') == ''
+        assert replace_nonalpha_in_string('0', '') == '0'
+        assert replace_nonalpha_in_string('h0l', '') == 'h0l'
+        assert replace_nonalpha_in_string('h/l', '') == 'hl'
+
+    def test_unicode(self):
+        assert remove_unicode('') == ('', 0)
+        assert remove_unicode('a') == ('a', 0)
+        assert remove_unicode(r'') == ('', 0)
+        assert remove_unicode('\u4F11') == ('', 1)
+
+    def test_replace_whitespaces(self):
+        assert replace_whitespaces('') == ''
+        assert replace_whitespaces('a') == 'a'
+        assert replace_whitespaces(' a') == 'a'
+        assert replace_whitespaces('\na') == 'a'
+        assert replace_whitespaces('a ') == 'a'
+        assert replace_whitespaces(' a ') == 'a'
+        assert replace_whitespaces('\na\n') == 'a'
+        assert replace_whitespaces('a a') == 'a a'
+        assert replace_whitespaces('a  a') == 'a a'
+        assert replace_whitespaces('a\na') == 'a a'
+        assert replace_whitespaces('\\') == '\\'
+        assert replace_whitespaces(' \\ ') == '\\'
+        assert replace_whitespaces('\n\ta\nn\t\n           g-') == 'a n g-'
+
     def test_unicode_regex(self):
         m = re_unicode_decimal.search('66&#0000;66')
         assert (m.group(1) or m.group(2)) == '0000'

@@ -1,9 +1,8 @@
 import csv
 import json
+import math
 import os
 from collections import OrderedDict
-
-import math
 
 from config.config import PROJECT_DIR
 from inputoutput.input import get_tweets, get_articles
@@ -14,14 +13,16 @@ idf_tweet_csv_filename = os.path.join(PROJECT_DIR, 'idf_tweet.csv')
 
 idf_article_filename = os.path.join(PROJECT_DIR, 'idf_article.json')
 
+
 def write_idf_articles():
     write_tf(get_articles, 'get_keywords', None, idf_article_filename, None)
+
 
 def write_idf_tweets():
     write_tf(get_tweets, 'get_keywords', df_tweet_filename, idf_tweet_filename, idf_tweet_csv_filename)
 
 
-def write_tf(data_getter, keywords_function_name:str, df_filename, idf_filename, idf_csv_filename):
+def write_tf(data_getter, keywords_function_name: str, df_filename, idf_filename, idf_csv_filename):
     documents = data_getter()
     df = {}
     for doc in documents:
@@ -49,13 +50,14 @@ def write_tf(data_getter, keywords_function_name:str, df_filename, idf_filename,
             writer = csv.writer(fp, delimiter=';')
             writer.writerow(['term', 'idf_t'])
             for (term, idf_t) in sorted_idf.items():
-                writer.writerow((term, str(idf_t).replace('.', ','), ))
+                writer.writerow((term, str(idf_t).replace('.', ','),))
 
 
 def get_idf_tweets():
     with open(idf_tweet_filename, 'r') as fp:
         d = json.load(fp)
     return d
+
 
 def get_idf_articles():
     with open(idf_article_filename, 'r') as fp:
