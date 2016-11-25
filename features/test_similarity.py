@@ -8,7 +8,7 @@ from unittest import TestCase
 from matplotlib import pyplot as plt
 from scipy.sparse.csgraph import reverse_cuthill_mckee
 
-from config.config import PROJECT_DIR, DROPBOX
+from config.config import PROJECT_DIR, DROPBOX_DIR
 from features.similarity import similarity_strings, similarity_tf
 from features.term_frequency import get_idf_tweets, get_idf_articles
 from inputoutput.imaging import plot_and_show_matrix
@@ -222,7 +222,7 @@ class TestCase2(TestCase):
         # for tweet_row in tweet_data_rows:
         #     data.append(tweet_row)
 
-        with open(DROPBOX + 'tmp/word_freq2.csv', 'w') as csvfile:
+        with open(DROPBOX_DIR + 'tmp/word_freq2.csv', 'w') as csvfile:
             csvwriter = csv.writer(csvfile, delimiter=";")
             for row in data:
                 csvwriter.writerow(row)

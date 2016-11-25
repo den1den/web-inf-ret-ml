@@ -8,9 +8,9 @@ from models.article import Article
 from models.tuser import TUser
 from models.tweet import Tweet
 
-TWEETS_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingTweet')
-TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingUser')
-ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'PreprocessingRSS')
+TWEETS_DIR = os.path.join(config.PCLOUD_DIR, 'tweets')
+TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'users')
+ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'articles')
 
 
 def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
@@ -19,8 +19,9 @@ def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefi
     see input.read_json_array_from_files()
     :rtype [Tweet]
     """
-    r = InputReader(dir_path, file_offset=file_offset, filename_prefix=filename_prefix)
-    return r.read_all(tweets_n, to_tweet)
+    from preprocessing.tweet_preprocessor import TweetPreprocessor
+    r = CSVInputReader(dir_path, TweetPreprocessor.TWEET_COLUMNS, file_offset=file_offset, filename_prefix=filename_prefix)
+    return r.read_all(to_tweet, tweets_n)
 
 
 def to_tweet(preprocessed_data):
@@ -126,15 +127,18 @@ class InputReader:
             # Read file
             self.current_file = os.path.join(self.dir_path, filename)
             try:
-                with open(self.current_file, encoding='utf8') as data_file:
-                    self.raw_items = json.load(data_file)
-                self.nxt_index = 0
-                print("Info: Input file read: %s" % self.current_file)
+                self.read_file()
                 return True
             except Exception as e:
                 print("Error: could not json.load file %s %s" % (self.current_file, e))
                 continue
         return False
+
+    def read_file(self):
+        with open(self.current_file, encoding='utf8') as data_file:
+            self.raw_items = json.load(data_file)
+        self.nxt_index = 0
+        print("Info: Input file read: %s" % self.current_file)
 
     def __iter__(self):
         return self
@@ -156,24 +160,27 @@ class InputReader:
         )
 
         t0 = time.time()
-        items = []
+        self.items = []
         for item in self:
             try:
-                items.append(function(item))
+                fi = function(item)
+                self.items.append(fi)
             except Exception as e:
                 print("Error: could not apply function to file %s:%d %s" % (self.current_file, self.i, e))
                 pass
+            if item_count is not None and len(self.items) >= item_count:
+                break
         t1 = time.time()
         duration = t1 - t0
 
-        if item_count is not None and len(items) != item_count:
-            raise AssertionError("Error: could only read %d of %d entries" % (len(items), item_count))
+        if item_count is not None and len(self.items) != item_count:
+            raise AssertionError("Error: could only read %d of %d entries" % (len(self.items), item_count))
 
         print(
             "Info: read %d entries read from %d files (%.2f sec per file, %.0f seconds in total)"
-            % (len(items), self.filecounter, duration / self.filecounter, duration)
+            % (len(self.items), self.filecounter, duration / self.filecounter, duration)
         )
-        return items
+        return self.items
 
     def __str__(self, *args, **kwargs):
         return "file: %s at entry %d" % (self.current_file, self.i)
@@ -195,6 +202,17 @@ class InputReader:
             return self._next_file()
         except StopIteration:
             return None
+
+
+class CSVInputReader(InputReader):
+    def __init__(self, dir_path, columns, item_offset=0, file_offset=0, filename_prefix='', filename_postfix='.csv',
+                 dir_name_prefix='', file_alternation=1, file_alternation_index=0):
+        super().__init__(dir_path, item_offset, file_offset, filename_prefix, filename_postfix, dir_name_prefix,
+                         file_alternation, file_alternation_index)
+        self.columns = columns
+
+    def read_file(self):
+        self.raw_items = csv_read(self.current_file, self.columns)
 
 
 class Writer:

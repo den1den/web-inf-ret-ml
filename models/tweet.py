@@ -6,7 +6,7 @@ from models.generics import HasKeywords
 class Tweet(dict, HasKeywords):
     def __init__(self, iterable=None, **kwargs):
         super().__init__(iterable, **kwargs)
-        self.id = int(self['id'])
+        self.id = int(self['id'][1:])
 
     def __str__(self, *args, **kwargs):
        return self['text']
