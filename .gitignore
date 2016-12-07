@@ -109,3 +109,6 @@ tf_idf_articles.csv
 Test Results - *
 pre-test*.csv
 pp-tweets-*.csv
+idf_*
+df_*
+idf.rar
