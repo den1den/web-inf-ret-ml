@@ -101,10 +101,10 @@ class InputReader:
         self.dir_path = dir_path
         self.os_walk_iter = iter(os.walk(dir_path))
 
-        self.filecounter = 0
-        self.nxt_index = 1
-        self.raw_items = []
-        self.i = 0
+        self.filecounter = 0  # File counter of files read
+        self.nxt_index = 0  # Index of next item to be returned in the raw_items array
+        self.raw_items = []  # Last read items
+        self.i = 0  # Number of items read so far
 
     def read_next_file(self):
         """
@@ -132,7 +132,8 @@ class InputReader:
             # Read file
             self.current_file = os.path.join(self.dir_path, filename)
             try:
-                self.read_file()
+                self.raw_items = self.read_file()
+                self.nxt_index = 0
                 return True
             except Exception as e:
                 print("Error: could not json.load file %s %s" % (self.current_file, e))
@@ -140,23 +141,27 @@ class InputReader:
         return False
 
     def read_file(self):
+        """
+        Process the current file
+        """
         with open(self.current_file, encoding='utf8') as data_file:
-            self.raw_items = json.load(data_file)
-        self.nxt_index = 0
+            raw_data = json.load(data_file)
         print("Info: Input file read: %s" % self.current_file)
+        return raw_data
 
     def __iter__(self):
         return self
 
     def __next__(self):
-        while len(self.raw_items) <= self.nxt_index:
+        while self.nxt_index == len(self.raw_items):
             if self.read_next_file():
                 pass
             else:
                 raise StopIteration()
+        nxt = self.raw_items[self.nxt_index]
         self.nxt_index += 1
         self.i += 1
-        return self.raw_items[self.nxt_index - 1]
+        return nxt
 
     def read_all(self, function=lambda x:x, item_count=None):
         print(
@@ -217,7 +222,9 @@ class CSVInputReader(InputReader):
         self.columns = columns
 
     def read_file(self):
-        self.raw_items = csv_read(self.current_file, self.columns)
+        raw_data = csv_read(self.current_file, self.columns)
+        print("Info: Input file read: %s" % self.current_file)
+        return raw_data
 
 
 class Writer:

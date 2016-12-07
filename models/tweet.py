@@ -11,6 +11,7 @@ INT.add('keyword_length'), INT.add('n_abbriviations'), INT.add('n_html_entities'
 BOOLEAN = set()
 BOOLEAN.add('ends_dots'), BOOLEAN.add('questionmark'), BOOLEAN.add('rt')
 
+
 class Tweet(dict, HasKeywords):
     def __init__(self, iterable=None, **kwargs):
         super().__init__(iterable, **kwargs)
@@ -64,4 +65,4 @@ class Tweet(dict, HasKeywords):
         return [word.lower() for word in re.split('\s+', self.get_txt())]
 
     def get_keywords(self):
-        return self['keywords_text'] if 'keywords_text' in self else None
+        return self['keywords'] if 'keywords' in self else None
