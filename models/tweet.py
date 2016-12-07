@@ -3,6 +3,7 @@ import re
 from models.generics import HasKeywords
 
 
+
 class Tweet(dict, HasKeywords):
     def __init__(self, iterable=None, **kwargs):
         super().__init__(iterable, **kwargs)
@@ -40,4 +41,4 @@ class Tweet(dict, HasKeywords):
         return [word.lower() for word in re.split('\s+', self.get_txt())]
 
     def get_keywords(self):
-        return self['keywords_text'] if 'keywords_text' in self else None
+        return self['keywords'] if 'keywords' in self else None
