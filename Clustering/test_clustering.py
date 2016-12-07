@@ -6,7 +6,6 @@ from unittest import TestCase
 class TestClustering(TestCase):
     def test_find_keywords_in_tweets(self):
         """ Testing the usage of keywords
-
         :return:
         """
 

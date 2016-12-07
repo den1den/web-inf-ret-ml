@@ -14,7 +14,6 @@ def make_list_of_string(string_list):
 
 def find_tweets_with_keywords(tweets, keywords, combination):
     """ Tries to find tweets that have at least one of the keywords in them
-
     :param tweets: The to be checked tweets
     :param article: The article
     :param combination: The number of keywords that need to be in the tweet to select it
@@ -37,7 +36,6 @@ def find_tweets_with_keywords(tweets, keywords, combination):
 
 def cluster_tweets_by_time(tweets, time):
     """ Clusters the tweets by time
-
     :param tweets: A list of tweets
     :param time: The time tho cluster the tweets (int)
     :return: A listed list of tweets

@@ -43,18 +43,15 @@ def to_tuser(preprocessed_data):
     return TUser(preprocessed_data)
 
 
-def get_articles(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix=''):
+def get_articles(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix='articles_'):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
-
     from preprocessing.article_preprocessor import ArticlePreprocessor
     r = CSVInputReader(dir_path, ArticlePreprocessor.ARTICLE_COLUMNS, file_offset=file_offset,
                        filename_prefix=filename_prefix)
-
-    #r = InputReader(dir_path, file_offset=file_offset, filename_prefix=filename_prefix)
-    return r.read_all(articles_n, to_article)
+    return r.read_all(to_article, articles_n)
 
 
 def to_article(preprocessed_data):

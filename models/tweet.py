@@ -2,36 +2,16 @@ import ast
 
 import re
 
+from inputoutput.string_fixer import fix_types
 from models.generics import HasKeywords
 
-ARRAY = set()
-ARRAY.add('mentions'), ARRAY.add('hashtags'), ARRAY.add('keywords'), ARRAY.add('media'), ARRAY.add('quotations'), ARRAY.add('symbols'), ARRAY.add('urls'), ARRAY.add('currencies'),
-INT = set()
-INT.add('keyword_length'), INT.add('n_abbriviations'), INT.add('n_html_entities'), INT.add('n_punctuations'), INT.add('n_quationmarks'), INT.add('n_unicode'), INT.add('newline_count')
-BOOLEAN = set()
-BOOLEAN.add('ends_dots'), BOOLEAN.add('questionmark'), BOOLEAN.add('rt')
 
 
 class Tweet(dict, HasKeywords):
     def __init__(self, iterable=None, **kwargs):
         super().__init__(iterable, **kwargs)
         self.id = int(self['id'][1:])
-        self.fix_types()
-
-    def fix_types(self):
-        # Dummy iterable to go through the set
-        dummy_iterable = dict(self)
-        for (key, value) in dummy_iterable.items():
-            if key in ARRAY:  # Check if supposed to be a string
-                # new_list = re.sub("\[|\]|,|'", '', value)
-                # new_array = new_list.split(' ')
-                self[key] = ast.literal_eval(value)
-            elif key in INT:  # Check if supposed to be an integer
-                self[key] = int(value)
-            elif key in BOOLEAN:  # Check if supposed to be a boolean
-                self[key] = bool(value)
-            else:  # Just string
-                self[key] = value
+        fix_types(self)
 
     def __str__(self, *args, **kwargs):
        return self['text']
