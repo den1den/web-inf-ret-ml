@@ -180,42 +180,7 @@ def remove_unprintable(s):
 def replace_nonalpha_in_string(s, repl=' '):
     return re_non_alpha.sub(repl, s)
 
-
-class SimpleProcessor:
-    """
-    Helper class to read and write large files
-    """
-
-    def __init__(self, reader: InputReader, writer: Writer):
-        self.reader = reader
-        self.writer = writer
-        self.i = 0
-
-    def __call__(self, n=None):
-        for data in self.reader:
-            try:
-                obj = self.process(data)
-            except Exception as e:
-                print("Warning: could not process %s:%d %s" % (self.reader.current_file, self.reader.i, e))
-                print("         data: %s" % data)
-                obj = None
-            if obj is not None:
-                self.writer.write(obj)
-                self.i += 1
-                if n is not None and self.i == n:
-                    break
-        self.done()
-
-    @abstractmethod
-    def process(self, raw_data):
-        return None
-
-    def done(self):
-        print("Done processing %d/%d" % (self.i, self.reader.i))
-        self.writer.close()
-
-
-class MultiProcessor(SimpleProcessor):
+class MultiProcessor:
     """
     Helper class to read and write large files. And also parse the users
     """
@@ -225,15 +190,31 @@ class MultiProcessor(SimpleProcessor):
         :param reader:
         :param writers: list of writers
         """
-        super().__init__(reader, writers[0])
+        self.reader = reader
         assert len(writers) > 0
-        self.extra_writer = writers[1:]
+        self.writers = writers
 
-    def process(self, raw_data):
-        return self.process_obj(raw_data)
+    def __call__(self, n=None):
+        """
+        :param n: number of input items to parse
+        """
+        for raw_data_element in self.reader:
+            try:
+                self.process(raw_data_element)
+            except Exception as e:
+                print("Warning: could not process %s:%d %s" % (self.reader.current_file, self.reader.i, e))
+                print("         data: %s" % raw_data_element)
+                output_array = None
+            if n is not None and self.reader.i == n:
+                break
+        self.done()
 
     @abstractmethod
-    def process_obj(self, raw_data):
+    def process(self, raw_data):
+        """
+        :param raw_data:
+        :return: None
+        """
         pass
 
     def processed_obj(self, i, obj):
@@ -242,11 +223,11 @@ class MultiProcessor(SimpleProcessor):
         :param obj: obj that is processed
         :return:
         """
-        self.extra_writer[i].write(obj)
+        self.writers[i].write(obj)
 
     def done(self):
-        super().done()
-        for w in self.extra_writer:
+        for w in self.writers:
             w.close()
+        print("Done processing %d to %s" % (self.reader.i, [w.i for w in self.writers]))
 
 

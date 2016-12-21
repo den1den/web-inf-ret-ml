@@ -21,7 +21,7 @@ def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefi
     """
     from preprocessing.tweet_preprocessor import TweetPreprocessor
     r = CSVInputReader(dir_path, TweetPreprocessor.TWEET_COLUMNS, file_offset=file_offset, filename_prefix=filename_prefix)
-    return r.read_all(to_tweet, tweets_n)
+    return r.read_all(to_tweet, item_count=tweets_n)
 
 
 def to_tweet(preprocessed_data):
@@ -35,7 +35,7 @@ def get_tusers(users_n=None, file_offset=0, dir_path=TWEET_USERS_DIR, filename_p
     see input.read_json_array_from_files()
     """
     r = InputReader(dir_path, file_offset=file_offset, filename_prefix=filename_prefix)
-    return r.read_all(users_n, to_tuser)
+    return r.read_all(to_tuser, item_count=users_n)
 
 
 def to_tuser(preprocessed_data):
@@ -51,7 +51,7 @@ def get_articles(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename
     from preprocessing.article_preprocessor import ArticlePreprocessor
     r = CSVInputReader(dir_path, ArticlePreprocessor.ARTICLE_COLUMNS, file_offset=file_offset,
                        filename_prefix=filename_prefix)
-    return r.read_all(to_article, articles_n)
+    return r.read_all(to_article, item_count=articles_n)
 
 
 def to_article(preprocessed_data):
@@ -65,6 +65,10 @@ def to_article(preprocessed_data):
 
 def as_id_dict(data):
     return {d.id: d for d in data}
+
+
+def read_json_array_from_files(to_obj_function, dir_path, **kwargs):
+    raise Exception("Depricated, use: reader = InputReader(); objs = reader.read_all()")
 
 
 class InputReader:
@@ -133,7 +137,7 @@ class InputReader:
                 self.nxt_index = 0
                 return True
             except Exception as e:
-                print("Error: could not json.load file %s %s" % (self.current_file, e))
+                print("Error: could not read_file file %s %s" % (self.current_file, e))
                 continue
         return False
 
@@ -160,7 +164,7 @@ class InputReader:
         self.i += 1
         return nxt
 
-    def read_all(self, function=lambda x:x, item_count=None):
+    def read_all(self, function=lambda x:x, item_count=None, item_offset=0):
         print(
             "Info: read all entries (with entry offset %d) from all `%s*%s` files (with file offset %d) from `%s`" %
             (self.item_offset, self.filename_prefix, self.filename_postfix, self.file_offset, self.dir_path)
@@ -168,7 +172,11 @@ class InputReader:
 
         t0 = time.time()
         self.items = []
+        i = 0
         for item in self:
+            i += 1
+            if i < item_offset:
+                continue
             try:
                 fi = function(item)
                 self.items.append(fi)
@@ -231,6 +239,7 @@ class Writer:
         self.write_every = write_every
         self.item_buffer = []
         self.filecount = 0
+        self.i = 0
         if clear_output_dir:
             clean_output_dir(self.dir_path)
 
@@ -248,6 +257,7 @@ class Writer:
         json.dump(self.item_buffer, open(filename, 'w+', encoding='utf8'))
         print("Info: written %d items to %s" % (len(self.item_buffer), filename))
         self.filecount += 1
+        self.i += len(self.item_buffer)
         self.item_buffer = []
 
     def get_file_path(self):
@@ -286,6 +296,9 @@ def csv_write(filepath, items, columns=None):
         writer = csv.writer(fp, delimiter=';', dialect='excel')
         writer.writerow(columns)
         for item in items:
+            if not type({}) is dict:
+                # TODO: when this is not a dict something goes wrong!
+                raise Exception("Coul not write: %s" % item)
             out_item = {key: (item[key] if (key in item and item[key] is not None) else '') for key in columns}
             writer.writerow([out_item[col] for col in columns])
             written_items.append(out_item)

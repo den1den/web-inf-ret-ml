@@ -14,9 +14,10 @@ REPORT_DUPLICATE = False
 
 def pp_tweets():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
-    inputdir = os.path.join(config.PCLOUD_BUFFER_DIR, 'raw-tweets')
-    outputdir_tweets = os.path.join(config.PCLOUD_BUFFER_DIR, 'preprocessed-tweets')
-    outputdir_tusers = os.path.join(config.PCLOUD_BUFFER_DIR, 'preprocessed-tusers')
+    inputdir = os.path.join(config.PCLOUD_BUFFER_DIR, '')
+    inputdir = r'T:\FILEZILLA PUBLIC FOLDER\WebInfRet\newoutput\tweets_valid'
+    outputdir_tweets = os.path.join(os.path.dirname(inputdir), 'preprocessed-tweets')
+    outputdir_tusers = os.path.join(os.path.dirname(inputdir), 'preprocessed-tusers')
 
     pre_processor = TweetPreprocessor(
         InputReader(inputdir),
@@ -29,8 +30,9 @@ def pp_tweets():
 def pp_articles():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
     inputdir = os.path.join(config.PCLOUD_BUFFER_DIR, 'raw-articles')
-    outputdir_articles = os.path.join(config.PCLOUD_BUFFER_DIR, 'preprocessed-articles')
-    outputdir_authors = os.path.join(config.PCLOUD_BUFFER_DIR, 'preprocessed-authors')
+    inputdir = r'T:\FILEZILLA PUBLIC FOLDER\WebInfRet\newoutput\tweets_valid'
+    outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles')
+    outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors')
 
     pre_processor = ArticlePreprocessor(
         InputReader(inputdir),
@@ -41,4 +43,4 @@ def pp_articles():
 
 
 if __name__ == '__main__':
-    pp_articles()
+    pp_tweets()

@@ -1,3 +1,4 @@
+import json
 import math
 import sys
 from unittest import TestCase
@@ -6,11 +7,19 @@ import os
 
 from config import config
 from config.config import PCLOUD_BUFFER_DIR
-from inputoutput.input import get_tweets, get_tusers, get_articles, csv_write, csv_read
+from inputoutput.input import get_tweets, get_tusers, get_articles, csv_write, csv_read, read_json_array_from_files
+
+
+class FileTester(TestCase):
+    def test_json(self):
+        d = config.PCLOUD_BUFFER_DIR
+        for filename in os.listdir(d):
+            json.load(open(os.path.join(d, filename), encoding='UTF8'))
 
 
 class TestIOMethods(TestCase):
     def test_item_offset(self):
+
         i10 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, item_count=10, item_offset=0)
         i5 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, item_count=5, item_offset=0)
         i5_2 = read_json_array_from_files(lambda l: l, config.PCLOUD_DIR, item_count=5, item_offset=5)

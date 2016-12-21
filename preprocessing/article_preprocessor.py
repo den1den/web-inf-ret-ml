@@ -27,7 +27,7 @@ class ArticlePreprocessor(MultiProcessor):
 
     ARTICLE_COLUMNS = ('id', 'author_ids', 'description', 'html', 'published_date', 'title', 'link', 'domain',)
 
-    def process_obj(self, raw_data):
+    def process(self, raw_data):
         # title
         title = raw_data['Title']
 
@@ -82,7 +82,7 @@ class ArticlePreprocessor(MultiProcessor):
         # replace whitespaces
         description = replace_whitespaces(description)
 
-        return {
+        self.processed_obj(0, {
             'id': id,
             'author_ids': author_ids,
             'description': description,
@@ -91,7 +91,7 @@ class ArticlePreprocessor(MultiProcessor):
             'title': title,
             'link': link,
             'domain': domain
-        }
+        })
 
     AUTHOR_COLUMNS = ('id', 'name',)
 
@@ -112,7 +112,7 @@ class ArticlePreprocessor(MultiProcessor):
                     'id': author_id,
                     'name': author_name
                 }
-                self.processed_obj(0, author)
+                self.processed_obj(1, author)
                 self.authors[author_name] = author
             author_ids.append(author['id'])
         return author_ids

@@ -1,7 +1,7 @@
 import os
+import re
 from datetime import datetime
 
-import re
 from nltk.corpus import stopwords
 
 from config import config
@@ -30,6 +30,7 @@ class TweetPreprocessor(MultiProcessor):
 
     TWEET_COLUMNS = (
         'id', 'filename', 'rt', 'user_id', 'mentions', 'urls', 'hashtags', 'symbols', 'media', 'source_type',
+        'timestamp',
         'source_url', 'full_text', 'text', 'fully_normalized_text', 'keywords', 'keywords_length', 'newline_count',
         'questionmark', 'quotations', 'ends_dots', 'currencies', 'n_html_entities', 'n_abbriviations',
         'n_quationmarks', 'n_unicode', 'n_punctuations', 'n_unprintable'
@@ -38,7 +39,7 @@ class TweetPreprocessor(MultiProcessor):
         'u_id', 'followers_count', 'favourites_count', 'statuses_count', 'created_at', 'location'
     )
 
-    def process_obj(self, raw_data):
+    def process(self, raw_data):
         """ process a tweet for feature extraction
         :param raw_data
         :return: preprocessed_data
@@ -72,10 +73,9 @@ class TweetPreprocessor(MultiProcessor):
         # user_id
         if 'user' not in raw_data:
             user_id = 'unknown'
-            user_output = None
         else:
             user_id = 'u' + raw_data['user']['id_str']
-            user_output = self.process_user(raw_data)
+            self.process_user(raw_data)
 
         # rt
         rt = 'retweeted_status' in raw_data
@@ -243,41 +243,45 @@ class TweetPreprocessor(MultiProcessor):
         # TODO: find dates
         date_matches = re_date_matches(normalized_text)
 
+        # timestamp
+        timestamp = int(raw_data['timestamp_ms'])
+
         self.tweet_n_unique += 1
         filename = '%s:%s' % (os.path.basename(self.reader.current_file), self.reader.i)
         keywords_length = len(keywords)
-        return {
-                   'id': id,
-                   'filename': filename,
-                   'rt': rt,
-                   'user_id': user_id,
-                   'mentions': mentions,
-                   'urls': urls,
-                   'hashtags': hashtags,
-                   'symbols': symbols,
-                   'media': media,
-                   'source_type': source_type,
-                   'source_url': source_url,
+        self.processed_obj(0, {
+            'id': id,
+            'filename': filename,
+            'rt': rt,
+            'user_id': user_id,
+            'mentions': mentions,
+            'urls': urls,
+            'hashtags': hashtags,
+            'symbols': symbols,
+            'media': media,
+            'source_type': source_type,
+            'source_url': source_url,
+            'timestamp': timestamp,
 
-                   'full_text': raw_text,
-                   'text': text,
-                   'fully_normalized_text': normalized_text_2,
-                   'keywords': keywords,
-                   'keywords_length': keywords_length,
+            'full_text': raw_text,
+            'text': text,
+            'fully_normalized_text': normalized_text_2,
+            'keywords': keywords,
+            'keywords_length': keywords_length,
 
-                   'newline_count': newline_count,
-                   'questionmark': questionmark,
-                   'quotations': quotations,
-                   'ends_dots': ends_dots,
-                   'currencies': currency_matches,
+            'newline_count': newline_count,
+            'questionmark': questionmark,
+            'quotations': quotations,
+            'ends_dots': ends_dots,
+            'currencies': currency_matches,
 
-                   'n_html_entities': n_html_entities,
-                   'n_abbriviations': n_abbriviations,
-                   'n_quationmarks': n_quationmarks,
-                   'n_unicode': n_unicode,
-                   'n_punctuations': n_punctuations,
-                   'n_unprintable': n_unprintable,
-               }, user_output
+            'n_html_entities': n_html_entities,
+            'n_abbriviations': n_abbriviations,
+            'n_quationmarks': n_quationmarks,
+            'n_unicode': n_unicode,
+            'n_punctuations': n_punctuations,
+            'n_unprintable': n_unprintable,
+        })
 
     def process_source(self, source):
         if source == '':
@@ -286,7 +290,7 @@ class TweetPreprocessor(MultiProcessor):
         else:
             source_match = re_html_a_tag.match(source)
             if source_match is None:
-                raise ValueError("Could not identify source: `%s` at %d" % (source, self.i - 1))
+                raise ValueError("Could not identify source: `%s` at %d" % (source, self.read_objects_counter - 1))
             source_url = source_match.group(1)
             source = source_match.group(2)
             if source not in self.tweet_sources:
@@ -382,7 +386,7 @@ class TweetPreprocessor(MultiProcessor):
         statuses_count = u['statuses_count']
         created_at = int(datetime.strptime(u['created_at'], '%a %b %d %H:%M:%S +0000 %Y').timestamp())
         location = u['location']
-        self.processed_obj(0, {
+        self.processed_obj(1, {
             'u_id': u_id,
             'followers_count': followers_count,
             'favourites_count': favourites_count,
