@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+import re
 import time
 
 from config import config
@@ -20,7 +21,8 @@ def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefi
     :rtype [Tweet]
     """
     from preprocessing.tweet_preprocessor import TweetPreprocessor
-    r = CSVInputReader(dir_path, TweetPreprocessor.TWEET_COLUMNS, file_offset=file_offset, filename_prefix=filename_prefix)
+    r = CSVInputReader(dir_path, TweetPreprocessor.TWEET_COLUMNS, file_offset=file_offset,
+                       filename_prefix=filename_prefix)
     return r.read_all(to_tweet, item_count=tweets_n)
 
 
@@ -71,6 +73,24 @@ def read_json_array_from_files(to_obj_function, dir_path, **kwargs):
     raise Exception("Depricated, use: reader = InputReader(); objs = reader.read_all()")
 
 
+class FileNameRecoginizer:
+    regex = re.compile(r'^(\d+)__?')
+
+    def __init__(self):
+        self.new = True
+        self.prefix = None
+
+    def found_filename(self, filename):
+        m = FileNameRecoginizer.regex.match(filename)
+        if not m:
+            raise Exception("Cannot recognize filename %s" % filename)
+        prefix = m.group(1)
+        self.new = prefix != self.prefix
+        if self.new:
+            self.prefix = prefix
+        return self.new
+
+
 class InputReader:
     """
     Loads in json arrays from a directory recursively
@@ -107,6 +127,8 @@ class InputReader:
         self.raw_items = []  # Last read items
         self.i = 0  # Number of items read so far
 
+        self.fnr = FileNameRecoginizer()
+
     def read_next_file(self):
         """
         Reads in the next file, or returns False when end is reached
@@ -130,9 +152,13 @@ class InputReader:
                 # skip file
                 continue
 
-            # Read file
+            # New filename found
             self.current_file = os.path.join(self.dir_path, filename)
+            if self.fnr and self.fnr.found_filename(os.path.basename(self.current_file)):
+                # New filename output found, do nothing for now
+                pass
             try:
+                # Read file
                 self.raw_items = self.read_file()
                 self.nxt_index = 0
                 return True
@@ -164,7 +190,7 @@ class InputReader:
         self.i += 1
         return nxt
 
-    def read_all(self, function=lambda x:x, item_count=None, item_offset=0):
+    def read_all(self, function=lambda x: x, item_count=None, item_offset=0):
         print(
             "Info: read all entries (with entry offset %d) from all `%s*%s` files (with file offset %d) from `%s`" %
             (self.item_offset, self.filename_prefix, self.filename_postfix, self.file_offset, self.dir_path)
@@ -201,6 +227,7 @@ class InputReader:
         return "file: %s at entry %d" % (self.current_file, self.i)
 
     fn_iter = None
+
     def _next_file(self):
         if self.fn_iter is not None:
             try:
