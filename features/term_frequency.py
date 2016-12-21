@@ -7,26 +7,26 @@ from collections import OrderedDict
 from config.config import PROJECT_DIR
 from inputoutput.input import get_tweets, get_articles
 
-tweet_df_filename = os.path.join(PROJECT_DIR, 'df_tweet_t.json')
+# tweet_df_filename = os.path.join(PROJECT_DIR, 'df_tweet_t.json')
 tweet_idf_json_filename = os.path.join(PROJECT_DIR, 'idf_tweet.json')
 tweet_idf_csv_filename = os.path.join(PROJECT_DIR, 'idf_tweet.csv')
 
-df_article_filename = os.path.join(PROJECT_DIR, 'df_article.json')
+# df_article_filename = os.path.join(PROJECT_DIR, 'df_article.json')
 article_idf_json_filename = os.path.join(PROJECT_DIR, 'idf_article.json')
 article_idf_csv_filename = os.path.join(PROJECT_DIR, 'idf_article.csv')
 
 
 def write_idf_articles():
     articles = get_articles()
-    write_tf_idf(articles, df_article_filename, article_idf_json_filename, article_idf_csv_filename)
+    write_tf_idf(articles, article_idf_json_filename, article_idf_csv_filename)
 
 
 def write_idf_tweets():
     tweets = get_tweets()
-    write_tf_idf(tweets, tweet_df_filename, tweet_idf_json_filename, tweet_idf_csv_filename)
+    write_tf_idf(tweets, tweet_idf_json_filename, tweet_idf_csv_filename)
 
 
-def write_tf_idf(documents, df_filename=None, idf_json_filename=None, idf_csv_filename=None, keywords_function_name='get_keywords'):
+def write_tf_idf(documents, idf_json_filename=None, idf_csv_filename=None, keywords_function_name='get_keywords', df_filename=None):
     df = get_df(documents, keywords_function_name)
 
     if df_filename is not None:
@@ -80,3 +80,11 @@ def get_idf_articles():
     with open(article_idf_json_filename, 'r') as fp:
         d = json.load(fp)
     return d
+
+def get_tf(documents, keywords_function_name='get_keywords'):
+    # Probably not usefull as the tweets are very small
+    pass
+
+def merge_files(file0, file1, doc_count1, doc_count2):
+    # TODO
+    pass
