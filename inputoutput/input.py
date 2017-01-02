@@ -11,8 +11,7 @@ from models.tweet import Tweet
 
 TWEETS_DIR = os.path.join(config.PCLOUD_DIR, 'tweets')
 TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'users')
-ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'articles')
-
+ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'articles', '20161003_20161115')
 
 def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
     """
@@ -83,11 +82,14 @@ class FileNameRecoginizer:
     def found_filename(self, filename):
         m = FileNameRecoginizer.regex.match(filename)
         if not m:
-            raise Exception("Cannot recognize filename %s" % filename)
-        prefix = m.group(1)
-        self.new = prefix != self.prefix
-        if self.new:
-            self.prefix = prefix
+            print("FileNameRecoginizer cannot recognize filename %s" % filename)
+            self.new = True
+            self.prefix = None
+        else:
+            prefix = m.group(1)
+            self.new = prefix != self.prefix
+            if self.new:
+                self.prefix = prefix
         return self.new
 
 
@@ -265,14 +267,18 @@ class Writer:
         self.base_filename = base_filename
         self.write_every = write_every
         self.item_buffer = []
-        self.filecount = 0
+        self.file_item_count = 0
+        self.file_count = 0
         self.i = 0
         if clear_output_dir:
             clean_output_dir(self.dir_path)
+        if not os.path.exists(dir_path):
+            os.mkdir(dir_path)
 
     def write(self, item):
         self.item_buffer.append(item)
-        if len(self.item_buffer) >= self.write_every:
+        self.file_item_count += 1
+        if self.file_item_count >= self.write_every:
             try:
                 self.write_to_file()
             except Exception as e:
@@ -283,12 +289,13 @@ class Writer:
         filename = self.get_file_path()
         json.dump(self.item_buffer, open(filename, 'w+', encoding='utf8'))
         print("Info: written %d items to %s" % (len(self.item_buffer), filename))
-        self.filecount += 1
-        self.i += len(self.item_buffer)
+        self.file_count += 1
+        self.i += self.file_item_count
         self.item_buffer = []
+        self.file_item_count = 0
 
     def get_file_path(self):
-        return os.path.join(self.dir_path, '%s_%s.json' % (self.base_filename, self.filecount))
+        return os.path.join(self.dir_path, '%s_%s.json' % (self.base_filename, self.file_count))
 
     def close(self):
         self.write_to_file()
@@ -302,11 +309,29 @@ class CSVWriter(Writer):
     def write_to_file(self):
         filename = self.get_file_path()
         csv_write(filename, self.item_buffer, self.columns)
-        self.filecount += 1
+        self.file_count += 1
         self.item_buffer = []
+        self.file_item_count = 0
 
     def get_file_path(self):
-        return os.path.join(self.dir_path, '%s_%s.csv' % (self.base_filename, self.filecount))
+        return os.path.join(self.dir_path, '%s_%s.csv' % (self.base_filename, self.file_count))
+
+
+class CSVAppendWriter(CSVWriter):
+    def __init__(self, dir_path, base_filename, filename_counter, columns, write_every=20000, clear_output_dir=False):
+        super().__init__(dir_path, base_filename, columns, write_every, clear_output_dir)
+        old = csv_read(base_filename + ('_%d' % filename_counter + '.csv'))
+        self.item_buffer = [0 for i in range(1, len(old))]
+
+    def write_to_file(self):
+        filepath = os.path.join(self.dir_path, '%s_%s_%s.csv' % (self.base_filename, self.file_count))
+        csv_write_append(filepath, self.item_buffer, self.columns)
+        self.file_count += 1
+        self.item_buffer = []
+        self.file_item_count = 0
+
+    def get_file_path(self):
+        pass
 
 
 def csv_write(filepath, items, columns=None):
@@ -322,6 +347,25 @@ def csv_write(filepath, items, columns=None):
     with open(filepath, 'w+', encoding='utf8', newline='\n') as fp:
         writer = csv.writer(fp, delimiter=';', dialect='excel')
         writer.writerow(columns)
+        for item in items:
+            if not type({}) is dict:
+                # TODO: when this is not a dict something goes wrong!
+                raise Exception("Coul not write: %s" % item)
+            out_item = {key: (item[key] if (key in item and item[key] is not None) else '') for key in columns}
+            writer.writerow([out_item[col] for col in columns])
+            written_items.append(out_item)
+    print("Info: %d items written to %s" % (len(items), filepath))
+    return written_items
+
+def csv_write_append(filepath, items, columns):
+    if len(items) == 0:
+        print("Warning: there are no items to write to %s" % filepath)
+        return
+    if not filepath.endswith('.csv'):
+        print("Warning: writing csv to file without .csv extension")
+    written_items = []
+    with open(filepath, 'a', encoding='utf8', newline='\n') as fp:
+        writer = csv.writer(fp, delimiter=';', dialect='excel')
         for item in items:
             if not type({}) is dict:
                 # TODO: when this is not a dict something goes wrong!

@@ -1,6 +1,8 @@
 import math
 import re
 
+
+
 def make_list_of_string(string_list):
     """ Makes a list of a string that is made like a list
 
@@ -12,11 +14,11 @@ def make_list_of_string(string_list):
     return new_list.split(' ')
 
 
-def find_tweets_with_keywords(tweets, keywords, combination):
+def find_tweets_with_keywords(tweets, keywords, combination=1):
     """ Tries to find tweets that have at least one of the keywords in them
     :param tweets: The to be checked tweets
     :param article: The article
-    :param combination: The number of keywords that need to be in the tweet to select it
+    :param combination: The minimal number of keywords that need to be in the tweet to select it
     :return: A list of the ids that are in the article
     """
 
@@ -25,7 +27,7 @@ def find_tweets_with_keywords(tweets, keywords, combination):
     for tweet in tweets:
         combi_number = 0
         for keyword in keywords:
-            tweet_keywords = make_list_of_string(tweet['keywords'])
+            tweet_keywords = tweet.get_keywords()
             if keyword in tweet_keywords:
                 combi_number += 1
             if combi_number == combination:
@@ -33,6 +35,29 @@ def find_tweets_with_keywords(tweets, keywords, combination):
                 break
 
     return article_tweets
+
+
+def find_tweets_with_keywords_idf(tweets, keywords, idf, idf_treshold=5):
+    """ Tries to find tweets that have at least one of the keywords in them
+    :param tweets: The to be checked tweets
+    :param article: The article
+    :param idf_treshold: The minimal som of mathing idf values that need to be in the tweet to select it
+    :return: A list of the ids that are in the article
+    """
+    article_tweets_idfs = []
+    for tweet in tweets:
+        idf_sum = 0
+        p = False
+        for keyword in keywords:
+            tweet_keywords = tweet.get_keywords()
+            if keyword in tweet_keywords:
+                idf_sum += idf[keyword]
+            if idf_sum >= idf_treshold:
+                p = True
+        if p:
+            article_tweets_idfs.append((idf_sum, tweet, ))
+    return article_tweets_idfs
+
 
 def cluster_tweets_by_time(tweets, time):
     """ Clusters the tweets by time
