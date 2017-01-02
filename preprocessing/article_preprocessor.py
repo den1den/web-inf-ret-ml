@@ -6,22 +6,26 @@ from preprocessing.preprocess_util import  re_whitespace, re_html, re_unicode_de
     remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities
 
 
-def get_new_id(generator, seen, prefix=''):
-    i = abs(hash(generator))
-    id = prefix + str(i)
-    while id in seen:
-        i += 1
-        id = 't' + str(i)
+def get_new_id(generator: str, seen_ids: set, prefix=''):
+    """"Generate a new unique id"""
+    while True:
+        i = abs(hash(generator))
+        id = prefix + str(i)
+        if id not in seen_ids:
+            break
+    # while id in seen:
+    #     i += 1
+    #     id = prefix + str(i)
     return id
 
 
 class ArticlePreprocessor(MultiProcessor):
-    def __init__(self, reader: InputReader, writer: Writer, user_writer, seen_ids=set(), seen_urls_titles=set(),
+    def __init__(self, reader: InputReader, writer: Writer, user_writer, seen_ids=set(), seen_urls=set(),
                  seen_authors: dict = None):
         super().__init__(reader, (writer, user_writer))
         if seen_authors is None:
             seen_authors = dict()
-        self.seen_urls_titles = seen_urls_titles  # set: url + '' + title
+        self.seen_urls = seen_urls  # set: url + '' + title
         self.seen_ids = seen_ids
         self.authors = seen_authors  # dict: Name -> author
 
@@ -31,14 +35,16 @@ class ArticlePreprocessor(MultiProcessor):
         # title
         title = raw_data['Title']
 
-        # id, based on unqiueness of url
-        id = get_new_id(raw_data['Link'], self.seen_ids, 'r')
+        # check if duplicate
         url_str = raw_data['Link']
-        unqique_str = url_str + '' + title
-        if unqique_str in self.seen_urls_titles:
+        unqique_str = url_str
+        if unqique_str in self.seen_urls:
             print("Info: skipping article %s:%d" % (self.reader.current_file, self.reader.i))
-        self.seen_urls_titles.add(unqique_str)
-        self.seen_ids.add(id)
+            return
+        self.seen_urls.add(unqique_str)
+
+        # id, based on unqiueness of url
+        article_id = get_new_id(url_str, self.seen_ids, 'r')
 
         # published_date
         try:
@@ -83,7 +89,7 @@ class ArticlePreprocessor(MultiProcessor):
         description = replace_whitespaces(description)
 
         self.processed_obj(0, {
-            'id': id,
+            'id': article_id,
             'author_ids': author_ids,
             'description': description,
             'html': is_html,
