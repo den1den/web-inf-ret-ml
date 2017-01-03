@@ -1,14 +1,13 @@
 import json
 import os
 from _operator import itemgetter
+from datetime import timedelta
 
-from Clustering.clustering import find_tweets_with_keywords, find_tweets_with_keywords_idf
+from Clustering.clustering import find_tweets_with_keywords_idf
 from config.config import PROJECT_DIR
-from features.term_frequency import get_idf_tweets
-from inputoutput.getters import get_articles, get_tweets, get_tweets_by_date
+from inputoutput.getters import get_articles, get_tweets_by_date
 
 articles = get_articles()
-tweets = get_tweets(60000)
 
 with open(os.path.join(PROJECT_DIR, 'idf_tweet_600000_0.json')) as fp:
     idf = json.load(fp)
@@ -20,6 +19,8 @@ for a in articles:
     kwds = a.get_preproc_title()
     if 'ayotte' in kwds:
 
+        start_date = a.get_date()
+        tweets = get_tweets_by_date(start_date - timedelta(days=1), start_date + timedelta(days=10))
         ts = find_tweets_with_keywords_idf(tweets, kwds, idf, 15)
         ts.sort(reverse=True, key=itemgetter(0))
         if len(ts) > 0:
@@ -27,7 +28,8 @@ for a in articles:
             output_articles.append((article_max_hit, a, ts))
         else:
             print("No hit on %s" % a)
-        i+=1
+        i += 1
+        break
 
 output_articles.sort(key=itemgetter(0))
 for article_max_hit, a, ts in output_articles[:]:

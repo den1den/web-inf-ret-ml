@@ -112,3 +112,4 @@ pp-tweets-*.csv
 idf_*
 df_*
 idf.rar
+article_clusters*.json

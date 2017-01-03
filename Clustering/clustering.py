@@ -42,7 +42,7 @@ def find_tweets_with_keywords_idf(tweets, keywords, idf, idf_treshold=5):
     :param tweets: The to be checked tweets
     :param article: The article
     :param idf_treshold: The minimal som of mathing idf values that need to be in the tweet to select it
-    :return: A list of the ids that are in the article
+    :return: A list of the [idf_sum, tweet] that are related to the article
     """
     article_tweets_idfs = []
     for tweet in tweets:

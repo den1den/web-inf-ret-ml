@@ -12,6 +12,30 @@ TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'users')
 ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'articles')
 
 
+def update_tweets_cache(start_date: date, end_date: date, tweets_cache: dict):
+    date_strs = []
+    d = start_date
+    while d <= end_date:
+        date_strs.append(d.strftime('tweets_%Y_%m_%d'))
+        d += timedelta(days=1)
+    # remove from cache whats not in this range
+    remove_keys = []
+    for (k, v) in tweets_cache.items():
+        if k not in date_strs:
+            remove_keys.append(k)
+    for k in remove_keys:
+        del tweets_cache[k]
+    # Add elements that were not in the cache
+    i = 0
+    for k in date_strs:
+        if k not in tweets_cache:
+            tweets = get_tweets(filename_prefix=k)
+            if len(tweets) > 0:
+                tweets_cache[k] = tweets
+                i += 1
+    print("update_tweets_cache(removed=%d, added=%d, size=%d)" % (len(remove_keys), i, len(tweets_cache)))
+
+
 def get_tweets_by_date(start_date: date, end_date: date):
     tweets = []
     d = start_date
