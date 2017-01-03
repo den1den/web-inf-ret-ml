@@ -81,7 +81,7 @@ class TweetPreprocessor(MultiProcessor):
         rt = 'retweeted_status' in raw_data
 
         # @
-        mentions = [str(um['id']) for um in raw_data['entities']['user_mentions']]
+        mentions = [str('u' + um['id']) for um in raw_data['entities']['user_mentions']]
 
         # urls
         urls = [url['expanded_url'] for url in raw_data['entities']['urls']]
