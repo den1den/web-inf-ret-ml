@@ -18,7 +18,10 @@ class Article(dict, HasKeywords):
         fix_types(self)
 
     def __str__(self, *args, **kwargs):
-       return str(self['title'])
+        if 'title' in self:
+            return str(self['title'])
+        else:
+            return "Article without title (%s)" % self.id
 
     def get_keywords(self):
         return self['description'].split(' ') if 'description' in self else None
@@ -27,7 +30,14 @@ class Article(dict, HasKeywords):
         return self.filter_stopwords(dirty_normalizer(self['description']))
 
     def get_preproc_title(self):
+        if 'title' not in self:
+            raise Exception("Article is missing title %s" % self)
         return self.filter_stopwords(dirty_normalizer(self['title']))
+
+    def get_date(self):
+        if 'published_date' in self:
+            return self['published_date'].date()
+        return None
 
     def filter_stopwords(self, normalized_text):
         from preprocessing.preprocess_util import re_whitespace
