@@ -13,6 +13,9 @@ class Tweet(dict, HasKeywords):
         self.id = int(self['id'][1:])
         fix_types(self)
 
+    def id_str(self):
+        return self['id']
+
     def __str__(self, *args, **kwargs):
        return self['text']
 

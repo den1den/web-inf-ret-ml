@@ -99,6 +99,13 @@ class TweetPreprocessor(MultiProcessor):
         else:
             media = []
 
+        if 'extended_entities' in raw_data and 'media' in raw_data['extended_entities']:
+            for m in raw_data['extended_entities']['media']:
+                if media['id'] not in [m['id'] for m in media]:
+                    print("Assertion failed, Media only found in extended media, asserted entities => extended_entities")
+                    media.append({'id': media['id'], 'type': media['type'], 'url': media['url']})
+                    raise AssertionError("Duplicate media")
+
         # source
         source = raw_data['source']
         source_type, source_url = self.process_source(source)
