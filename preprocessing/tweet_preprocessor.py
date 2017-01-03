@@ -5,7 +5,8 @@ from datetime import datetime
 from nltk.corpus import stopwords
 
 from config import config
-from inputoutput.input import InputReader, Writer
+from inputoutput.readers import InputReader
+from inputoutput.writers import Writer
 from preprocessing.preprocess_util import re_currency_matches, re_date_matches, remove_by_indices, replace_in_string, \
     remove_strings, remove_unicode, replace_whitespaces, remove_unprintable, replace_nonalpha_in_string, \
     re_whitespace, re_html_a_tag, re_quotations, MultiProcessor, drop_punctuation, replace_html_entities, \

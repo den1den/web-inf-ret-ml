@@ -1,8 +1,9 @@
 from datetime import datetime
 from urllib.parse import urlparse
 
-from inputoutput.input import InputReader, Writer
-from preprocessing.preprocess_util import  re_whitespace, re_html, re_unicode_decimal, MultiProcessor, replace_in_string, \
+from inputoutput.readers import InputReader
+from inputoutput.writers import Writer
+from preprocessing.preprocess_util import re_whitespace, re_html, re_unicode_decimal, MultiProcessor, replace_in_string, \
     remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities
 
 
@@ -20,8 +21,7 @@ def get_new_id(generator: str, seen_ids: set, prefix=''):
 
 
 class ArticlePreprocessor(MultiProcessor):
-    def __init__(self, reader: InputReader, writer: Writer, user_writer, seen_ids=set(), seen_urls=set(),
-                 seen_authors: dict = None):
+    def __init__(self, reader: InputReader, writer: Writer, user_writer, seen_ids=set(), seen_urls=set(), seen_authors: dict = None):
         super().__init__(reader, (writer, user_writer))
         if seen_authors is None:
             seen_authors = dict()

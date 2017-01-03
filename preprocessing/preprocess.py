@@ -5,13 +5,10 @@ from inputoutput.input import InputReader, CSVWriter
 from preprocessing.article_preprocessor import ArticlePreprocessor
 from preprocessing.tweet_preprocessor import TweetPreprocessor
 
-REPORT_DUPLICATE = False
-
 
 #
 # Execution functions
 #
-
 def pp_tweets():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
     inputdir = os.path.join(config.PCLOUD_BUFFER_DIR, '')
@@ -29,8 +26,8 @@ def pp_tweets():
 
 def pp_articles():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
-    inputdir = os.path.join(config.PCLOUD_BUFFER_DIR, 'raw-articles')
     inputdir = r'T:\FILEZILLA PUBLIC FOLDER\WebInfRet\newoutput\raw_articles_20161003_20161115'
+    inputdir = r'H:\TWEETS\preprocessed_articles'
     outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles')
     outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors')
 

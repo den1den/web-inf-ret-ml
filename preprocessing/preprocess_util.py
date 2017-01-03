@@ -4,11 +4,10 @@ import unicodedata
 from abc import abstractmethod
 from operator import itemgetter
 
-from inputoutput.input import InputReader, Writer
-
 #
 # Regex patterns
 #
+from inputoutput.readers import InputReader
 
 re_whitespace = re.compile('\s+')
 re_html = re.compile(r'<[^>]+>')

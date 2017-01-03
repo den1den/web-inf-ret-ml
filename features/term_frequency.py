@@ -5,9 +5,10 @@ import os
 from collections import OrderedDict
 
 from config.config import PROJECT_DIR
-from inputoutput.input import get_tweets, get_articles
 
 # tweet_df_filename = os.path.join(PROJECT_DIR, 'df_tweet_t.json')
+from inputoutput.getters import get_articles, get_tweets
+
 tweet_idf_json_filename = os.path.join(PROJECT_DIR, 'idf_tweet.json')
 tweet_idf_csv_filename = os.path.join(PROJECT_DIR, 'idf_tweet.csv')
 

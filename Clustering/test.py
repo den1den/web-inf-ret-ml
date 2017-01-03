@@ -5,7 +5,7 @@ from _operator import itemgetter
 from Clustering.clustering import find_tweets_with_keywords, find_tweets_with_keywords_idf
 from config.config import PROJECT_DIR
 from features.term_frequency import get_idf_tweets
-from inputoutput.input import get_articles, get_tweets
+from inputoutput.getters import get_articles, get_tweets, get_tweets_by_date
 
 articles = get_articles()
 tweets = get_tweets(60000)
