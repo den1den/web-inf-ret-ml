@@ -65,7 +65,7 @@ class InputReader:
                 break
 
             if not self.filename_match(filename):
-                break
+                continue
 
             # file matches
             self.filecounter += 1
@@ -169,18 +169,19 @@ class InputReader:
 
 class CSVInputReader(InputReader):
     def __init__(self, dir_path, columns, item_offset=0, file_offset=0, filename_prefix='', filename_postfix='.csv',
-                 dir_name_prefix='', file_alternation=1, file_alternation_index=0):
+                 dir_name_prefix='', file_alternation=1, file_alternation_index=0, delimiter=';'):
         super().__init__(dir_path, item_offset, file_offset, filename_prefix, filename_postfix, dir_name_prefix,
                          file_alternation, file_alternation_index)
         self.columns = columns
+        self.delimiter = delimiter
 
     def read_file(self):
-        raw_data = csv_read(self.current_file, self.columns)
+        raw_data = csv_read(self.current_file, self.columns, delimiter=self.delimiter)
         # print("Info: Input file read: %s" % self.current_file)
         return raw_data
 
 
-def csv_read(filepath, column=None):
+def csv_read(filepath, column=None, delimiter=';'):
     """
     Warning: will not read correct data type
     """
@@ -191,7 +192,7 @@ def csv_read(filepath, column=None):
         print("Warning: file not found, could not read from %s" % filepath)
         return items
     with open(filepath, 'r', encoding='utf8', newline='\n') as fp:
-        data = csv.reader(fp, delimiter=';')
+        data = csv.reader(fp, delimiter=delimiter)
         if column is None:
             header = [column for column in next(data)]
         else:

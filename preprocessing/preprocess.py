@@ -1,8 +1,10 @@
 import os
 
 from config import config
-from inputoutput.input import InputReader, CSVWriter
-from preprocessing.article_preprocessor import ArticlePreprocessor
+
+from inputoutput.readers import CSVInputReader, InputReader
+from inputoutput.writers import CSVWriter
+from preprocessing.article_preprocessor import ArticlePreprocessor, ArticlePreprocessorSander
 from preprocessing.tweet_preprocessor import TweetPreprocessor
 
 
@@ -24,10 +26,10 @@ def pp_tweets():
     pre_processor()
 
 
-def pp_articles():
+def pp_articles_adrian():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
-    inputdir = r'T:\FILEZILLA PUBLIC FOLDER\WebInfRet\newoutput\raw_articles_20161003_20161115'
-    inputdir = r'H:\TWEETS\preprocessed_articles'
+    inputdir = r'P:\tweets\crawler results'
+
     outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles')
     outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors')
 
@@ -39,5 +41,22 @@ def pp_articles():
     pre_processor()
 
 
+def pp_articles_sander():
+    # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
+    inputdir = r'P:\tweets\crawler results'
+    inputdir = r'H:\TWEETS\ARTICLES_SANDER\raw_data'
+    outputdir = r'H:\TWEETS\ARTICLES_SANDER'
+
+    outputdir_articles = os.path.join(outputdir, 'preprocessed_articles')
+    outputdir_authors = os.path.join(outputdir, 'preprocessed_authors')
+
+    pre_processor = ArticlePreprocessorSander(
+        CSVInputReader(inputdir, ['url', 'date', 'content'], delimiter='\t'),
+        CSVWriter(outputdir_articles, 'articles', clear_output_dir=True, columns=ArticlePreprocessor.ARTICLE_COLUMNS),
+        CSVWriter(outputdir_authors, 'authors', clear_output_dir=True, columns=ArticlePreprocessor.AUTHOR_COLUMNS)
+    )
+    pre_processor()
+
+
 if __name__ == '__main__':
-    pp_articles()
+    pp_articles_sander()
