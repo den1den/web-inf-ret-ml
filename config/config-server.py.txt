@@ -1,0 +1,14 @@
+import os
+
+PROJECT_DIR = r'/home/webinfret/web-inf-ret-ml'
+
+DROPBOX_DIR = None
+
+PCLOUD_DIR = r'/home/webinfret/pCloud'
+PCLOUD_BUFFER_DIR = None
+
+PHP_PROJECT_ROOT = os.path.abspath(os.path.join(PROJECT_DIR, '../web-inf-retrieval'))
+PHP_MAIN_SCRIPT = 'php "' + os.path.join(PHP_PROJECT_ROOT, 'Crawler/main.php') + '"'
+
+# tmp var
+SPELLING = False
