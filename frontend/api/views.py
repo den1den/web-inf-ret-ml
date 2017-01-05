@@ -39,6 +39,10 @@ class TestPhpOutputView(View):
 
 
 class TweetCountCacheViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Get the tweet count per date. If jQuery is used the array should be passed after `$.ajaxSettings.traditional = true;`
+    The endpoint of tweet counts per week is in GET /api/tweet_count_week
+    """
     serializer_class = TweetCountCacheSerializer
     queryset = TweetCountCache.objects.all()
 
