@@ -12,8 +12,8 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from config.config import PHP_MAIN_SCRIPT
-from frontend.api.models import TweetCountCache
-from frontend.api.serializer import TweetCountCacheSerializer
+from frontend.api.models import TweetCountCache, TweetCluster
+from frontend.api.serializer import TweetCountCacheSerializer, TweetClusterSerializer
 
 
 def stream_command_output_git():
@@ -39,8 +39,17 @@ class TestPhpOutputView(View):
 
 
 class TweetCountCacheViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Get the tweet count per date. If jQuery is used the array should be passed after `$.ajaxSettings.traditional = true;`
+    The endpoint of tweet counts per week is in GET /api/tweet_count_week
+    """
     serializer_class = TweetCountCacheSerializer
     queryset = TweetCountCache.objects.all()
+
+
+class TweetClusterViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = TweetClusterSerializer
+    queryset = TweetCluster.objects.all()
 
 
 class TweetCountWeeksValidator(Serializer):

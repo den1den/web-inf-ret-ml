@@ -16,3 +16,18 @@ class TweetCountCache(models.Model):
             tc = TweetCountCache(count=n, day=day)
             tc.save()
             return tc
+
+
+class Tweet(models.Model):
+    def get_tweet_id(self):
+        return 't' + self.id
+
+
+class Article(models.Model):
+    def get_article_id(self):
+        return 'r' + self.id
+
+
+class TweetCluster(models.Model):
+    article = models.ForeignKey(Article)
+    tweets = models.ManyToManyField(Tweet)
