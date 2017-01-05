@@ -201,3 +201,37 @@ def csv_read(filepath, column=None, delimiter=';'):
             items.append({header[i]: value for i, value in enumerate(item)})
     print("Info: %d items read from %s" % (len(items), filepath))
     return items
+
+
+class JSONInputReader(InputReader):
+    def __init__(self, dir_path, item_offset=0, file_offset=0, filename_prefix='', filename_postfix='.json',
+                 dir_name_prefix='', file_alternation=1, file_alternation_index=0, delimiter=';'):
+        super().__init__(dir_path, item_offset, file_offset, filename_prefix, filename_postfix, dir_name_prefix,
+                 file_alternation, file_alternation_index)
+        self.delimiter = delimiter
+
+    def read_file(self):
+        raw_data = json_read(self.current_file, headers = ['url', 'date', 'article'])
+        # print("Info: Input file read: %s" % self.current_file)
+        return raw_data
+
+
+def json_read(filepath, headers = None):
+    """
+    Warning: will not read correct data type
+    """
+    if not filepath.endswith('.json'):
+        print("Warning: writing json to file without .json extension")
+    items = []
+    if not os.path.exists(filepath):
+        print("Warning: file not found, could not read from %s" % filepath)
+        return items
+    with open(filepath) as fp:
+        data = json.load(fp)
+        if headers is None:
+            headers = ['url', 'date', 'article']
+        for line in data:
+            for i in range(len(headers)):
+                items.append({headers[i]: value for i, value in enumerate(line)})
+    print("Info: %d items read from %s" % (len(items), filepath))
+    return items

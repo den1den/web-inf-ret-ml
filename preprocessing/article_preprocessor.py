@@ -1,5 +1,5 @@
 import os
-import datetime
+from datetime import datetime
 from urllib.parse import urlparse
 
 import re
@@ -7,7 +7,7 @@ import re
 from inputoutput.readers import InputReader
 from inputoutput.writers import Writer
 from preprocessing.preprocess_util import re_whitespace, re_html, re_unicode_decimal, MultiProcessor, replace_in_string, \
-    remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities
+    remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities, re_quotations
 
 
 def get_new_id(generator: str, seen_ids: set, prefix=''):
@@ -140,7 +140,7 @@ class ArticlePreprocessor(MultiProcessor):
 
 
 class ArticlePreprocessorSander(ArticlePreprocessor):
-    origin_re = re.compile(r'^\d+_([a-z_]+)_\d+.csv$')
+    origin_re = re.compile(r'^\d+_([a-z_]+)_\d+.json$')
 
     def __init__(self, reader: InputReader, writer: Writer, user_writer, seen_ids=set(), seen_urls=set(),
                  seen_authors: dict = None):
@@ -150,8 +150,9 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
         filename = os.path.basename(self.reader.current_file)
 
         origin = ArticlePreprocessorSander.origin_re.fullmatch(filename)
-        if not origin:
+        if origin is None:
             print("Could not parse origin from filename %s" % filename)
+            return
         origin = origin.group(1)
 
         url = urlparse(raw_data['url'])
@@ -167,10 +168,33 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             return
         self.seen_urls.add(link_str)
 
+        re_title_prepostfix = re.compile(r'\n|\r|{|}|:|\(|\)|;')
+        no_title = 0
+
+        if origin == 'huffpost':
+            raw_article = raw_data['article']
+            title_loc1 = raw_article.find("window.HP.modules.smarten.selector('.js-nav-sticky')")
+            title_loc2 = raw_article.find("\"pageName\"")
+            if title_loc1 != -1:
+                raw_title = raw_article[title_loc1 - 130: title_loc1]
+                title = re_title_prepostfix.sub('', raw_title)
+            elif title_loc2 != -1:
+                raw_title = raw_article[title_loc2 + 11 : title_loc2 + 100]
+                title_span = re.match(re_quotations, raw_title).span()
+                title = raw_title[title_span[0] + 1:title_span[1] -1]
+                print(title)
+            else:
+                print('%d title not found' % no_title)
+            pass
+        else:
+            raise Exception("Origin %s not known" % origin)
+
         timestamp = raw_data['date']
 
+        #TODO
+
         # title
-        title = raw_data['Title']
+        #title = raw_data['Title']
 
 
 

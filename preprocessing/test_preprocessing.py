@@ -1,8 +1,10 @@
 import os
 from unittest import TestCase
+import csv
 
-from config import config
-from inputoutput.input import get_tweets, get_articles
+from config.config import PCLOUD_DIR
+from inputoutput.getters import get_tweets, get_articles
+from preprocessing.preprocess import pp_articles_adrian, pp_articles_sander
 from preprocessing.preprocess_util import re_currency_matches, remove_unicode, replace_whitespaces, \
     replace_nonalpha_in_string, re_whitespace, re_unicode_decimal
 
@@ -140,5 +142,22 @@ class TestPreprocessedData(TestCase):
         N = 10
         articles = get_articles(10)
         for article in articles:
-            print(article['Description'])
-            print(article['real_Description'])
+            print(article['link'])
+            print(article['description'])
+
+    def test_article_ongoing_preprocessing(self):
+        """ Tests the later ongoing pre-processing of the articles
+
+        """
+
+        # pp_articles_adrian()
+        # with open(''.join([PCLOUD_DIR,'preprocessed_articles', '\\articles_0.csv'])) as csvfile:
+        #     articles = csv.reader(csvfile, delimiter=';')
+        #     seen_urls = set()
+        #     for row in articles:
+        #         if row[6] not in seen_urls:
+        #             seen_urls.add(row[6])
+        #         else:
+        #             raise(Exception)
+
+        pp_articles_sander()

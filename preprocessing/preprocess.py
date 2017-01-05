@@ -1,8 +1,9 @@
 import os
 
 from config import config
+from config.config import PCLOUD_DIR
 
-from inputoutput.readers import CSVInputReader, InputReader
+from inputoutput.readers import CSVInputReader, InputReader, JSONInputReader
 from inputoutput.writers import CSVWriter
 from preprocessing.article_preprocessor import ArticlePreprocessor, ArticlePreprocessorSander
 from preprocessing.tweet_preprocessor import TweetPreprocessor
@@ -28,10 +29,10 @@ def pp_tweets():
 
 def pp_articles_adrian():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
-    inputdir = r'P:\tweets\crawler results'
+    inputdir = ''.join([PCLOUD_DIR, '\crawler results'])
 
-    outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles')
-    outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors')
+    outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles\\adrian_results')
+    outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors\\adrian_results')
 
     pre_processor = ArticlePreprocessor(
         InputReader(inputdir),
@@ -43,15 +44,13 @@ def pp_articles_adrian():
 
 def pp_articles_sander():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
-    inputdir = r'P:\tweets\crawler results'
-    inputdir = r'H:\TWEETS\ARTICLES_SANDER\raw_data'
-    outputdir = r'H:\TWEETS\ARTICLES_SANDER'
+    inputdir = ''.join([PCLOUD_DIR, '\JSON results'])
 
-    outputdir_articles = os.path.join(outputdir, 'preprocessed_articles')
-    outputdir_authors = os.path.join(outputdir, 'preprocessed_authors')
+    outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles\\sander_results')
+    outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors\\sander_results')
 
     pre_processor = ArticlePreprocessorSander(
-        CSVInputReader(inputdir, ['url', 'date', 'content'], delimiter='\t'),
+        JSONInputReader(inputdir),
         CSVWriter(outputdir_articles, 'articles', clear_output_dir=True, columns=ArticlePreprocessor.ARTICLE_COLUMNS),
         CSVWriter(outputdir_authors, 'authors', clear_output_dir=True, columns=ArticlePreprocessor.AUTHOR_COLUMNS)
     )
