@@ -10,19 +10,15 @@ class TweetCountCacheSerializer(serializers.ModelSerializer):
 
 
 class TweetSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField(method_name='get_tweet_id')
-
     class Meta:
         model = Tweet
-        fields = ()
+        fields = ('id', )
 
 
 class ArticleSerializer(serializers.ModelSerializer):
-    id = serializers.SerializerMethodField(method_name='get_article_id')
-
     class Meta:
         model = Article
-        fields = ()
+        fields = ('id', )
 
 
 class TweetClusterSerializer(serializers.ModelSerializer):
