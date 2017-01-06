@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+import datetime
 from urllib.parse import urlparse
 
 import re
@@ -7,7 +7,9 @@ import re
 from inputoutput.readers import InputReader
 from inputoutput.writers import Writer
 from preprocessing.preprocess_util import re_whitespace, re_html, re_unicode_decimal, MultiProcessor, replace_in_string, \
-    remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities, re_quotations
+    remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities, re_quotations, \
+    re_quotations_somewhere, re_quotations_somewhere_single, re_quotations_somewhere_slashes, re_url_wp_date, \
+    re_url_stripes, re_url_stripes_no_id
 
 
 def get_new_id(generator: str, seen_ids: set, prefix=''):
@@ -104,16 +106,22 @@ class ArticlePreprocessor(MultiProcessor):
 
     AUTHOR_COLUMNS = ('id', 'name',)
 
-    def parse_authors(self, raw_data):
-        if raw_data['Author'] == '':
+    def parse_authors(self, raw_data = None, authors = None):
+        if authors is None:
+            if raw_data is None:
+                Exception('Not the right input in parse_authors')
+            else:
+                authors = raw_data['Author']
+
+        if authors == '':
             return []
         author_ids = []
 
-        if ', ' in raw_data['Author']:
-            for author_name in raw_data['Author'].split(', '):
+        if ', ' in authors:
+            for author_name in authors.split(', '):
                 author_ids.append(self.process_author_str(author_name))
-        if ' and ' in raw_data['Author'].lower():
-            for author_name in raw_data['Author'].lower().split(' and '):
+        if ' and ' in authors.lower():
+            for author_name in authors.lower().split(' and '):
                 author_ids.append(self.process_author_str(author_name))
         return author_ids
 
@@ -150,6 +158,7 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
         filename = os.path.basename(self.reader.current_file)
 
         origin = ArticlePreprocessorSander.origin_re.fullmatch(filename)
+
         if origin is None:
             print("Could not parse origin from filename %s" % filename)
             return
@@ -169,10 +178,15 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
         self.seen_urls.add(link_str)
 
         re_title_prepostfix = re.compile(r'\n|\r|{|}|:|\(|\)|;')
-        no_title = 0
+        raw_article = raw_data['article']
+        if raw_article == "":
+            print('Empty article')
+            return
 
+        #title & author
         if origin == 'huffpost':
-            raw_article = raw_data['article']
+            return
+            # Title
             title_loc1 = raw_article.find("window.HP.modules.smarten.selector('.js-nav-sticky')")
             title_loc2 = raw_article.find("\"pageName\"")
             if title_loc1 != -1:
@@ -180,26 +194,119 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                 title = re_title_prepostfix.sub('', raw_title)
             elif title_loc2 != -1:
                 raw_title = raw_article[title_loc2 + 11 : title_loc2 + 100]
-                title_span = re.match(re_quotations, raw_title).span()
-                title = raw_title[title_span[0] + 1:title_span[1] -1]
-                print(title)
+                match = re.match(re_quotations_somewhere, raw_title)
+                if match:
+                    title = match.group(1)
+                else:
+                    print('No match for title')
+                    match = None
             else:
-                print('%d title not found' % no_title)
-            pass
+                print('Title not found in %s with link %s' % (filename, link_str))
+                return
+
+            # Author
+            author_loc = raw_article.find("    author:")
+            raw_author = raw_article[author_loc + 7:  author_loc + 100]
+            match = re.match(re_quotations_somewhere, raw_author)
+            if match:
+                authors = match.group(1)
+            else:
+                authors = None
+                return
+
+        elif origin == 'la_times':
+
+            #Title
+            title_loc1 = raw_article.find("pageTitle")
+            if title_loc1 != -1:
+                raw_title = raw_article[title_loc1 + 9: title_loc1 + 209]
+                match = re.match(re_quotations_somewhere_single, raw_title)
+                if match:
+                    title = match.group(1)
+                else:
+                    print('No match for title')
+                    title = "Unknown Title"
+            else:
+                print('No title found')
+                title = "Unknown Title"
+
+            # Author
+            author_loc1 = raw_article.find("page.author")
+            if author_loc1 != -1:
+                raw_author = raw_article[author_loc1 + 11: author_loc1 + 100]
+                match = re.match(re_quotations_somewhere_single, raw_author)
+                if match:
+                    authors = match.group(1)
+                else:
+                    print('No match for author')
+                    authors = "Unknown Author"
+            else:
+                print('No author found')
+                authors = "Unknown Author"
+
+        elif origin == 'wash_post':
+            #Title
+            match = re.match(re_url_wp_date, link_str)
+            if match:
+                raw_title = match.group(1)
+                title = raw_title.replace('-', ' ')
+            else:
+                match = re.search(re_url_stripes, link_str)
+                if match:
+                    raw_title = match.group(1)
+                    title = raw_title.replace('-', ' ')
+                else:
+                    print('No match for title')
+                    title = "Unknown Title"
+
+            #Author
+            author_loc = raw_article.find('By')
+            first_words = raw_article[author_loc + 3:author_loc + 200].split(' ')
+            for i in range(len(first_words)):
+                if first_words[i] in ['January', 'February', 'March', 'April', 'May', 'June', 'July',
+                                      'August', 'September', 'October', 'November', 'December']:
+                    authors = ' '.join(first_words[0:i])
+                    break
+                if i == len(first_words):
+                    authors = 'Unknown Author'
+
+        elif origin == 'wash_times':
+            #Title
+            match = re.search(re_url_stripes, link_str)
+            if match:
+                raw_title = match.group(1)
+                title = raw_title.replace('-', ' ')
+            else:
+                print('No match for title')
+                title = "Unknown Title"
+
+            #Author
+            authors = "Unknown Author"
+
+        elif origin == 'wsj':
+            #Title
+            match = re.search(re_url_stripes_no_id, link_str)
+            if match:
+                raw_title = match.group(1)
+                title = raw_title.replace('-', ' ')
+            else:
+                match = re.search(re_url_stripes, link_str)
+                if match:
+                    raw_title = match.group(1)
+                    title = raw_title.replace('-', ' ')
+                else:
+                    print('No match for title')
+                    title = "Unknown Title"
+
+            #Author
+            authors = "Unknown Author"
         else:
             raise Exception("Origin %s not known" % origin)
 
         timestamp = raw_data['date']
 
-        #TODO
-
-        # title
-        #title = raw_data['Title']
-
-
-
         # id, based on unqiueness of url
-        article_id = get_new_id(url_str, self.seen_ids, 'r')
+        article_id = get_new_id(link_str, self.seen_ids, 'r')
 
         # published_date
         try:
@@ -210,7 +317,7 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             raise e
 
         # link
-        url = urlparse(url_str)
+        url = urlparse(link_str)
         link = url.geturl()
         domain = str(url.hostname)
         if domain.startswith('www.'):
@@ -219,28 +326,11 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             domain = domain[0:len(domain) - 4]
 
         # author
-        author_ids = self.parse_authors(raw_data)
+        author_ids = self.parse_authors(authors=authors)
 
         # description
-        raw_description = raw_data['Description']
-        description = replace_in_string(raw_description, replace_html_entities)[0]
-        # remove unicode
-        description = remove_unicode(description)[0]
-        # remove unprintable charcters
-        description = remove_unprintable(description)[0]
-        # html
-        is_html = re_html.search(raw_description) is not None
-        if is_html:
-            finditer = re_unicode_decimal.finditer(description)
-            offset = 0
-            for m in finditer:
-                unicode = (m.group(1) or m.group(2))
-                description = str(description[0:m.start() + offset] + description[m.end() + offset:len(description)])
-                offset -= (m.end() - m.start())
-            assert re_unicode_decimal.search(description) is None
-            description = re_html.sub(' ', description)
-        # replace whitespaces
-        description = replace_whitespaces(description)
+        description = 'No description'
+        is_html = 'True'
 
         self.processed_obj(0, {
             'id': article_id,

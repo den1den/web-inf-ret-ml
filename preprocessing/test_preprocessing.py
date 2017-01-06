@@ -6,7 +6,7 @@ from config.config import PCLOUD_DIR
 from inputoutput.getters import get_tweets, get_articles
 from preprocessing.preprocess import pp_articles_adrian, pp_articles_sander
 from preprocessing.preprocess_util import re_currency_matches, remove_unicode, replace_whitespaces, \
-    replace_nonalpha_in_string, re_whitespace, re_unicode_decimal
+    replace_nonalpha_in_string, re_whitespace, re_unicode_decimal, re_url_wp_date
 
 
 class TestPreprocessing(TestCase):
@@ -92,6 +92,14 @@ class TestPreprocessing(TestCase):
         assert re_currency_matches('loses a million dollars in the first place?" ') == [1000000]
         assert re_currency_matches('loses a billion dollars in the first place?" ') == [1000000000]
         assert re_currency_matches('loses a trillion dollars in the first place?" ') == [1000000000000]
+
+    def test_re_url_wp_date(self):
+        assert re_url_wp_date.match('https://www.washingtonpost.com/news/early-lead/wp/2016/12/01/pirates-third-baseman-jung-ho-kang-charged-with-fleeing-dui-crash-scene/')\
+                   .group(1) == 'pirates-third-baseman-jung-ho-kang-charged-with-fleeing-dui-crash-scene'
+        assert re_url_wp_date.match('https://www.washingtonpost.com/news/early-lead/wp/2016/12/01/pirates-third-baseman-jung-ho-kang-charged-with-fleeing-dui-crash-scene/asas')\
+                   .group(1) == 'pirates-third-baseman-jung-ho-kang-charged-with-fleeing-dui-crash-scene'
+        assert re_url_wp_date.match('/wp/2016/12/01/pirates-third-baseman-jung-ho-kang-charged-with-fleeing-dui-crash-scene/asas')\
+                   .group(1) == 'pirates-third-baseman-jung-ho-kang-charged-with-fleeing-dui-crash-scene'
 
 
 class TestPreprocessedData(TestCase):
