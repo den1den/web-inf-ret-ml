@@ -177,6 +177,7 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             return
         self.seen_urls.add(link_str)
 
+
         re_title_prepostfix = re.compile(r'\n|\r|{|}|:|\(|\)|;')
         raw_article = raw_data['article']
         if raw_article == "":
