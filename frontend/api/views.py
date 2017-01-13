@@ -8,6 +8,7 @@ from django.views import View
 from rest_framework import serializers
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
@@ -36,6 +37,10 @@ class TestPhpOutputView(View):
     def get(self, request, *args, **kwargs):
         php_args = 'test_command'
         return StreamingHttpResponse(stream_command_output(PHP_MAIN_SCRIPT + ' ' + php_args))
+
+
+class LimitedPagenumbrPagination(PageNumberPagination):
+    page_size = 10
 
 
 # Tweet Counts ################################################################
@@ -92,8 +97,12 @@ def get_tweet_counts_week(request: Request):
 
 # Tweet Clusters ################################################################
 class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    These are all the clusters that we have
+    """
     serializer_class = ClusterSerializer
     queryset = Cluster.objects.all()
+    pagination_class = LimitedPagenumbrPagination
 
 
 class ClusterManualViewSet(viewsets.ReadOnlyModelViewSet):
@@ -102,3 +111,4 @@ class ClusterManualViewSet(viewsets.ReadOnlyModelViewSet):
     """
     serializer_class = ClusterSerializer
     queryset = Cluster.objects.filter()
+    pagination_class = LimitedPagenumbrPagination
