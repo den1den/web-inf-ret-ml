@@ -19,7 +19,10 @@ class Article(dict, HasKeywords):
 
     def __str__(self, *args, **kwargs):
         if 'title' in self:
-            return str(self['title'])
+            if 'published_date' in self:
+                return '(%s) %s' % (self['published_date'], self['title'])
+            else:
+                return str(self['title'])
         else:
             return "Article without title (%s)" % self.id
 
