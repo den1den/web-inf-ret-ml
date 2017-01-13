@@ -48,10 +48,10 @@ class Command(BaseCommand):
                 continue
 
             # find clusters with ALL these tweets
-            cluster_candidates = [m.cluster for m in TweetClusterMembership.objects.filter(tweet=tweets[0]).all()]
+            cluster_candidates = [m.cluster for m in TweetClusterMembership.objects.filter(cluster__article=article, tweet=tweets[0]).all()]
             for tweet in tweets[1:]:
 
-                cc_of_next_tweet = [m.cluster for m in TweetClusterMembership.objects.filter(tweet=tweet).all()]
+                cc_of_next_tweet = [m.cluster for m in TweetClusterMembership.objects.filter(cluster__article=article, tweet=tweet).all()]
 
                 for cluster in tuple(cluster_candidates):
                     if cluster not in cc_of_next_tweet:
