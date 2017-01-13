@@ -114,3 +114,6 @@ df_*
 idf.rar
 article_clusters*.json
 !article_clusters_live.json
+
+runserver.sh
+
