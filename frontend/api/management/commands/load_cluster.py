@@ -70,15 +70,14 @@ class Command(BaseCommand):
             if len(cluster_candidates) == 1:
                 # One found
                 cluster = cluster_candidates[0]
+                print('Updating: cluster of article %s' % cluster.article.article_id)
 
-                self.stdout.write(self.style.NOTICE('Updating: %s' % cluster_dict['tweets']))
                 i = 0
                 for tweet_dict in cluster_dict['tweets']:
                     tweet = tweets[i]
                     m = TweetClusterMembership.objects.get(tweet=tweet, cluster=cluster)
 
                     # ADD values: warning does not update but just adds the values
-                    attribut_values = []
                     for key, value in tweet_dict.items():
                         if key == 'id':
                             continue
@@ -98,17 +97,15 @@ class Command(BaseCommand):
                                 attribute_value.save()
                         except Exception as e:
                             self.stdout.write(self.style.ERROR('Could not update attribute value %s in %s (%s)' % (key, tweet_dict, attribute_value)))
-
-
-                    m.attributes.add(*attribut_values)
             elif len(cluster_candidates) == 0:
                 # None found
 
-                self.stdout.write(self.style.NOTICE('  Adding: %s' % cluster_dict['tweets']))
                 # create cluster
                 cluster = Cluster.objects.create(article=article)
                 cluster.save()
                 created += 1
+
+                print('  Adding: cluster of article %s' % cluster.article.article_id)
 
                 # add tweet memberships
                 i = 0
