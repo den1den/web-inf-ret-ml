@@ -57,7 +57,9 @@ MIDDLEWARE = [
 CORS_ORIGIN_WHITELIST = (
     'group1.ga',
     'localhost',
-    '127.0.0.1'
+    '127.0.0.1',
+    'localhost:8044',
+    'localhost:8081',
 )
 
 ROOT_URLCONF = 'frontend.base.urls'
