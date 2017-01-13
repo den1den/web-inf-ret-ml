@@ -36,8 +36,10 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
     articles = get_articles(1000, file_offset=12)
     i = 0
     last_start_date = None
-    tweets = None
+
     for a in articles:
+        if a.id[0] != 'r':
+            raise Exception("Non article is get_aticles! %s" % a)
         try:
             kwds = a.get_preproc_title()
             if a.get_date() != last_start_date:
