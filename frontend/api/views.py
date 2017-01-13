@@ -12,8 +12,8 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from config.config import PHP_MAIN_SCRIPT
-from frontend.api.models import TweetCountCache, TweetCluster
-from frontend.api.serializer import TweetCountCacheSerializer, TweetClusterSerializer
+from frontend.api.models import TweetCountCache, Cluster
+from frontend.api.serializer import TweetCountCacheSerializer, ClusterSerializer
 
 
 def stream_command_output_git():
@@ -38,18 +38,17 @@ class TestPhpOutputView(View):
         return StreamingHttpResponse(stream_command_output(PHP_MAIN_SCRIPT + ' ' + php_args))
 
 
+# Tweet Counts ################################################################
 class TweetCountCacheViewSet(viewsets.ReadOnlyModelViewSet):
     """
-    Get the tweet count per date. If jQuery is used the array should be passed after `$.ajaxSettings.traditional = true;`
-    The endpoint of tweet counts per week is in GET /api/tweet_count_week
+    ### Get the tweet count per date.
+    If jQuery is used the array should be passed after `$.ajaxSettings.traditional = true;`
+
+    The endpoint of tweet counts per week is in GET [tweet_count_week](/tweet_count_week)
+    You do have to supply start and end parameters formatted as "YEAR weeknumber", such as: [tweet_count_week/?start=2016 1&end=2016 3](/tweet_count_week/?start=2016%201&end=2016%203)
     """
     serializer_class = TweetCountCacheSerializer
     queryset = TweetCountCache.objects.all()
-
-
-class TweetClusterViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = TweetClusterSerializer
-    queryset = TweetCluster.objects.all()
 
 
 class TweetCountWeeksValidator(Serializer):
@@ -89,3 +88,17 @@ def get_tweet_counts_week(request: Request):
         week_start = next_week_start
 
     return JsonResponse(result)
+
+
+# Tweet Clusters ################################################################
+class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = ClusterSerializer
+    queryset = Cluster.objects.all()
+
+
+class ClusterManualViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    Get all tweet clusters that have not yet been manually rated
+    """
+    serializer_class = ClusterSerializer
+    queryset = Cluster.objects.filter()

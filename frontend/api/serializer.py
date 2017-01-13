@@ -1,6 +1,8 @@
 from rest_framework import serializers
+from rest_framework.relations import SlugRelatedField, StringRelatedField
 
-from frontend.api.models import TweetCountCache, TweetCluster, Tweet, Article
+from frontend.api.models import TweetCountCache, Tweet, Article, TweetClusterMembership, Cluster, \
+    TweetClusterAttributeValue
 
 
 class TweetCountCacheSerializer(serializers.ModelSerializer):
@@ -9,22 +11,56 @@ class TweetCountCacheSerializer(serializers.ModelSerializer):
         fields = ('count', 'day',)
 
 
-class TweetSerializer(serializers.ModelSerializer):
+# class TweetSerializer(serializers.ModelSerializer):
+#     id = serializers.SerializerMethodField('get_tweet_id')
+#
+#     class Meta:
+#         model = Tweet
+#         fields = ('id',)
+#
+#     def get_tweet_id(self, tweet):
+#         return str(tweet)
+
+
+# class ArticleSerializer(serializers.ModelSerializer):
+#     id = serializers.SerializerMethodField('get_article_id')
+#
+#     class Meta:
+#         model = Article
+#         fields = ('id',)
+#
+#     def get_article_id(self, article):
+#         return str(article)
+
+
+# class AttributeSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = TweetClusterAttributes
+#         fields = ('name', )
+
+
+class AttributeValueSerializer(serializers.ModelSerializer):
+    attr = SlugRelatedField(slug_field='name', read_only=True)
+
     class Meta:
-        model = Tweet
-        fields = ('id', )
+        model = TweetClusterAttributeValue
+        fields = ('attr', 'val')
 
 
-class ArticleSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Article
-        fields = ('id', )
-
-
-class TweetClusterSerializer(serializers.ModelSerializer):
-    tweets = TweetSerializer(many=True)
-    article = ArticleSerializer()
+class TweetClusterMembershipSerializer(serializers.ModelSerializer):
+    tweet = StringRelatedField()
+    attributes = AttributeValueSerializer(many=True)
 
     class Meta:
-        model = TweetCluster
-        fields = ('tweets', 'article', )
+        model = TweetClusterMembership
+        fields = ('tweet', 'attributes')
+
+
+class ClusterSerializer(serializers.ModelSerializer):
+    tweets = TweetClusterMembershipSerializer(source='tweetclustermembership_set', many=True)
+    article = StringRelatedField()
+    url = serializers.HyperlinkedIdentityField(view_name='cluster-detail')
+
+    class Meta:
+        model = Cluster
+        fields = ('id', 'tweets', 'article', 'url',)

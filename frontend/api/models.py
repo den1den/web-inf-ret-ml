@@ -19,15 +19,37 @@ class TweetCountCache(models.Model):
 
 
 class Tweet(models.Model):
+    def __str__(self):
+        return self.get_tweet_id()
+
     def get_tweet_id(self):
-        return 't' + self.id
+        return 't%d' % self.id
 
 
 class Article(models.Model):
+    def __str__(self):
+        return self.get_article_id()
+
     def get_article_id(self):
-        return 'r' + self.id
+        return 'r%d' % self.id
 
 
-class TweetCluster(models.Model):
+class TweetClusterAttributes(models.Model):
+    name = models.CharField(max_length=128)
+
+
+class TweetClusterAttributeValue(models.Model):
+    attr = models.ForeignKey(TweetClusterAttributes)
+    val = models.DecimalField(max_digits=4 + 6, decimal_places=6)
+
+
+class Cluster(models.Model):
     article = models.ForeignKey(Article)
-    tweets = models.ManyToManyField(Tweet)
+    tweets = models.ManyToManyField(Tweet, through='TweetClusterMembership')
+    checked = models.BooleanField(default=False)
+
+
+class TweetClusterMembership(models.Model):
+    tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
+    cluster = models.ForeignKey(Cluster, on_delete=models.CASCADE)
+    attributes = models.ManyToManyField(TweetClusterAttributeValue)
