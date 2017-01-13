@@ -9,7 +9,7 @@ from models.tweet import Tweet
 
 TWEETS_DIR = os.path.join(config.PCLOUD_DIR, 'tweets')
 TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'users')
-ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'articles')
+ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'preprocessed_articles', 'sander_results')
 
 
 def update_tweets_cache(start_date: date, end_date: date, tweets_cache: dict):
