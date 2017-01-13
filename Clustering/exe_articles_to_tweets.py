@@ -1,12 +1,13 @@
 import json
 import os
+import random
 from _operator import itemgetter
 from datetime import timedelta
 
 from Clustering.clustering import find_tweets_with_keywords_idf
 from config.config import PROJECT_DIR
 from inputoutput.cli import query_yes_no
-from inputoutput.getters import get_articles, get_tweets_by_date, update_tweets_cache
+from inputoutput.getters import get_articles, update_tweets_cache
 
 # output
 article_clusters = {}  # article_id -> tweet_id
@@ -32,7 +33,7 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
             idf.update(json.load(fp))
 
     # For all articles
-    articles = get_articles()
+    articles = get_articles(1000, file_offset=12)
     i = 0
     last_start_date = None
     tweets = None
@@ -41,25 +42,18 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
             kwds = a.get_preproc_title()
             if a.get_date() != last_start_date:
                 last_start_date = a.get_date()
-                update_tweets_cache(last_start_date - timedelta(days=1), last_start_date + timedelta(days=10), tweets_cache)
+                update_tweets_cache(last_start_date - timedelta(days=0), last_start_date + timedelta(days=5), tweets_cache)
 
             all_tweets = []
             for tweets in tweets_cache.values():
                 all_tweets += tweets
             ts = find_tweets_with_keywords_idf(all_tweets, kwds, idf, TRESHOLD)
-            ts.sort(reverse=True, key=itemgetter(0))
             if len(ts) > 0:
-                article_max_hit = ts[0][0]
-                article_clusters[a.id] = {
-                    'article_max_hit': article_max_hit,
-                    'tweets': [tweet.id_str() for (idf_sum, tweet) in ts],
-                }
+                ts.sort(reverse=True, key=itemgetter(0))
+                article_clusters[a.id] = process_cluster(a, ts)
             else:
                 print("No hit on %s" % a)
-                article_clusters[a.id] = {
-                    'article_max_hit': 0,
-                    'tweets': [],
-                }
+                # Do not add to output
         except Exception as err:
             try:
                 print("Writing to %s" % article_clusters_filepath)
@@ -75,6 +69,19 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
 
     print("Writing to %s" % article_clusters_filepath)
     json.dump(article_clusters, open(article_clusters_filepath, 'w+', encoding='utf-8'), indent=1)
+
+
+def process_cluster(article, tweets):
+    article_max_hit = tweets[0][0]
+    rumor_value = random.random() * 2 - 1
+    return {
+        'article_max_hit': article_max_hit,
+        'rumor_value': rumor_value,
+        'tweets': [
+            {'id': tweet.id_str(), 'idf_sum': idf_sum}
+            for (idf_sum, tweet) in tweets],
+    }
+
 
 if __name__ == '__main__':
     exe(article_clusters, article_clusters_filepath, TRESHOLD)
