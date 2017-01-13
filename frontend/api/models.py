@@ -39,17 +39,18 @@ class TweetClusterAttributes(models.Model):
 
 
 class TweetClusterAttributeValue(models.Model):
-    attr = models.ForeignKey(TweetClusterAttributes)
-    val = models.DecimalField(max_digits=4 + 6, decimal_places=6)
+    attribute = models.ForeignKey('TweetClusterAttributes')
+    tweet_cluster_membership = models.ForeignKey('TweetClusterMembership')
+    value = models.DecimalField(max_digits=4 + 6, decimal_places=6)
 
 
 class Cluster(models.Model):
-    article = models.ForeignKey(Article)
-    tweets = models.ManyToManyField(Tweet, through='TweetClusterMembership')
+    article = models.ForeignKey('Article')
+    tweets = models.ManyToManyField('Tweet', through='TweetClusterMembership')
     checked = models.BooleanField(default=False)
 
 
 class TweetClusterMembership(models.Model):
     tweet = models.ForeignKey(Tweet, on_delete=models.CASCADE)
     cluster = models.ForeignKey(Cluster, on_delete=models.CASCADE)
-    attributes = models.ManyToManyField(TweetClusterAttributeValue)
+    attributes = models.ManyToManyField('TweetClusterAttributes', through='TweetClusterAttributeValue')

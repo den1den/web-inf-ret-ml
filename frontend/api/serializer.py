@@ -40,16 +40,16 @@ class TweetCountCacheSerializer(serializers.ModelSerializer):
 
 
 class AttributeValueSerializer(serializers.ModelSerializer):
-    attr = SlugRelatedField(slug_field='name', read_only=True)
+    attribute = SlugRelatedField(slug_field='name', read_only=True)
 
     class Meta:
         model = TweetClusterAttributeValue
-        fields = ('attr', 'val')
+        fields = ('attribute', 'value')
 
 
 class TweetClusterMembershipSerializer(serializers.ModelSerializer):
     tweet = StringRelatedField()
-    attributes = AttributeValueSerializer(many=True)
+    attributes = AttributeValueSerializer(source='tweetclusterattributevalue_set', many=True)
 
     class Meta:
         model = TweetClusterMembership

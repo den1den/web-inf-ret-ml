@@ -88,13 +88,13 @@ class Command(BaseCommand):
 
                         attribute_value = None
                         try:
-                            attribute_value = m.attributes.filter(attr=attribute).first()
+                            attribute_value = TweetClusterAttributeValue.objects.filter(tweet_cluster_membership=m, attribute=attribute).first()
                             if attribute_value is None:
-                                m.attributes.create(attr=attribute, val=value)
+                                TweetClusterAttributeValue.objects.create(tweet_cluster_membership=m, attribute=attribute, value=value)
                                 created += 1
                             else:
                                 # update
-                                attribute_value.val = value
+                                attribute_value.value = value
                                 attribute_value.save()
                         except Exception as e:
                             self.stdout.write(self.style.ERROR('Could not update attribute value %s in %s (%s)' % (key, tweet_dict, attribute_value)))
@@ -119,7 +119,6 @@ class Command(BaseCommand):
                     i += 1
 
                     # update values
-                    attribut_values = []
                     for key, value in tweet_dict.items():
                         if key == 'id':
                             continue
@@ -127,13 +126,10 @@ class Command(BaseCommand):
                         if c:
                             created += 1
                         try:
-                            attribute_value = TweetClusterAttributeValue.objects.create(attr=attribute, val=value)
+                            attribute_value = TweetClusterAttributeValue.objects.create(tweet_cluster_membership=m, attribute=attribute, value=value)
                             created += 1
-                            attribut_values.append(attribute_value)
                         except Exception as e:
                             self.stdout.write(self.style.ERROR('Could not store attribute %s in %s' % (key, tweet_dict)))
-
-                    m.attributes.add(*attribut_values)
             else:
                 self.stdout.write(self.style.ERROR('Many clusters found. tweets = %s, clusters = %s' % (tweets, cluster_candidates)))
             # if missing:
