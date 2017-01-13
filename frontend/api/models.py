@@ -19,19 +19,17 @@ class TweetCountCache(models.Model):
 
 
 class Tweet(models.Model):
-    def __str__(self):
-        return self.get_tweet_id()
+    tweet_id = models.CharField(max_length=21)
 
-    def get_tweet_id(self):
-        return 't%d' % self.id
+    def __str__(self):
+        return self.tweet_id
 
 
 class Article(models.Model):
-    def __str__(self):
-        return self.get_article_id()
+    article_id = models.CharField(max_length=21)
 
-    def get_article_id(self):
-        return 'r%d' % self.id
+    def __str__(self):
+        return self.article_id
 
 
 class TweetClusterAttributes(models.Model):

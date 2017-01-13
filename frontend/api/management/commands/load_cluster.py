@@ -26,10 +26,10 @@ class Command(BaseCommand):
         created = 0
         for article_id, cluster_dict in clusters.items():
             # match article
-            if not 'r' == article_id[0]:
-                self.stdout.write(self.style.WARNING('Could not import article with non article id: %s' % article_id))
+            if type(article_id) is not str or article_id[0] != 'r':
+                self.stdout.write(self.style.WARNING('Could not import article with non article_id: %s' % article_id))
                 continue
-            article, c = Article.objects.get_or_create(id=int(article_id[1:]))
+            article, c = Article.objects.get_or_create(article_id=article_id)
             if c:
                 created += 1
 
@@ -37,9 +37,9 @@ class Command(BaseCommand):
             tweets = []
             for tweet_dict in cluster_dict['tweets']:
                 if type(tweet_dict['id']) is not str or tweet_dict['id'][0] != 't':
-                    raise Exception("Could not read tweet %s" % tweet_dict)
-                tweet_id = int(tweet_dict['id'][1:])
-                tweet, c = Tweet.objects.get_or_create(id=tweet_id)
+                    self.stdout.write(self.style.WARNING('Could not import tweet with non tweet_id: %s' % tweet_dict))
+                    continue
+                tweet, c = Tweet.objects.get_or_create(tweet_id=tweet_dict['id'])
                 if c:
                     created += 1
                 tweets.append(tweet)
