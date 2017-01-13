@@ -2,9 +2,9 @@ import datetime
 import json
 import os
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
-from frontend.api.models import TweetCluster, Article, Tweet, TweetCountCache
+from frontend.api.models import TweetCountCache
 
 
 class Command(BaseCommand):
