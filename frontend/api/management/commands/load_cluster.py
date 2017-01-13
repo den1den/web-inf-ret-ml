@@ -36,8 +36,8 @@ class Command(BaseCommand):
             # match tweets
             tweets = []
             for tweet_dict in cluster_dict['tweets']:
-                assert type(tweet_dict['id']) is str
-                assert tweet_dict['id'][0] == 't'
+                if type(tweet_dict['id']) is not str or tweet_dict['id'][0] != 't':
+                    raise Exception("Could not read tweet %s" % tweet_dict)
                 tweet_id = int(tweet_dict['id'][1:])
                 tweet, c = Tweet.objects.get_or_create(id=tweet_id)
                 if c:
