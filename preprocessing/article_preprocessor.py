@@ -199,10 +199,8 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                 if match:
                     title = match.group(1)
                 else:
-                    print('No match for title')
                     match = None
             else:
-                print('Title not found in %s with link %s' % (filename, link_str))
                 return
 
             # Author
@@ -228,7 +226,6 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                     print('No match for title')
                     title = "Unknown Title"
             else:
-                print('No title found')
                 title = "Unknown Title"
 
             # Author
@@ -239,10 +236,8 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                 if match:
                     authors = match.group(1)
                 else:
-                    print('No match for author')
                     authors = "Unknown Author"
             else:
-                print('No author found')
                 authors = "Unknown Author"
 
         elif origin == 'wash_post':
@@ -257,19 +252,20 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                     raw_title = match.group(1)
                     title = raw_title.replace('-', ' ')
                 else:
-                    print('No match for title')
                     title = "Unknown Title"
 
             #Author
             author_loc = raw_article.find('By')
-            first_words = raw_article[author_loc + 3:author_loc + 200].split(' ')
+            first_words = list(filter(None, raw_article[author_loc + 3:author_loc + 200].split(' ')))
+
             for i in range(len(first_words)):
                 if first_words[i] in ['January', 'February', 'March', 'April', 'May', 'June', 'July',
                                       'August', 'September', 'October', 'November', 'December']:
                     authors = ' '.join(first_words[0:i])
                     break
-                if i == len(first_words):
+                if i == 9 or i == len(first_words):
                     authors = 'Unknown Author'
+                    break
 
         elif origin == 'wash_times':
             #Title
@@ -278,7 +274,6 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                 raw_title = match.group(1)
                 title = raw_title.replace('-', ' ')
             else:
-                print('No match for title')
                 title = "Unknown Title"
 
             #Author
@@ -296,7 +291,6 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                     raw_title = match.group(1)
                     title = raw_title.replace('-', ' ')
                 else:
-                    print('No match for title')
                     title = "Unknown Title"
 
             #Author
@@ -305,17 +299,19 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             raise Exception("Origin %s not known" % origin)
 
         timestamp = raw_data['date']
+        published_date = datetime.datetime.fromtimestamp(int(timestamp)).strftime('%Y-%m-%d')
 
         # id, based on unqiueness of url
         article_id = get_new_id(link_str, self.seen_ids, 'r')
 
-        # published_date
-        try:
-            date_str = filename[:8]
-            published_date = datetime.date(int(date_str[:4]), month=int(date_str[5:6]), day=int(date_str[7:8]))
-        except ValueError as e:
-            print("Could not parse date from filename %s" % filename)
-            raise e
+        # # published_date
+        # try:
+        #     # date_str = filename[:8]
+        #     # published_date = datetime.date(int(date_str[:4]), month=int(date_str[5:6]), day=int(date_str[7:8]))
+        #
+        # except ValueError as e:
+        #     print("Could not parse date from filename %s" % filename)
+        #     raise e
 
         # link
         url = urlparse(link_str)
@@ -327,7 +323,12 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             domain = domain[0:len(domain) - 4]
 
         # author
-        author_ids = self.parse_authors(authors=authors)
+        authors = self.parse_authors(authors=authors)
+        if authors != []:
+            print('yes')
+        author_ids = []
+        for author in authors:
+            author_ids.append(author['id'])
 
         # description
         description = 'No description'

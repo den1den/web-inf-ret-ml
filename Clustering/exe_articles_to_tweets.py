@@ -5,7 +5,7 @@ from _operator import itemgetter
 from datetime import timedelta
 
 from Clustering.clustering import find_tweets_with_keywords_idf
-from config.config import PROJECT_DIR
+from config.config import PROJECT_DIR, PCLOUD_DIR
 from inputoutput.cli import query_yes_no
 from inputoutput.getters import get_articles, update_tweets_cache
 
@@ -14,7 +14,7 @@ article_clusters = {}  # article_id -> tweet_id
 article_clusters_filepath = os.path.join(PROJECT_DIR, 'article_clusters.json')
 
 # the idf baseline to use
-idf_files = [os.path.join(PROJECT_DIR, 'idf_tweet_600000_0.json'), os.path.join(PROJECT_DIR, 'idf_tweet_577244_1.json')]
+idf_files = [os.path.join(PCLOUD_DIR, 'idf', 'idf_tweet_600000_0.json'), os.path.join(PCLOUD_DIR, 'idf', 'idf_tweet_577244_1.json')]
 
 # treshold to make sure only words that are unique are searched for
 TRESHOLD = 15
@@ -39,7 +39,7 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
 
     for a in articles:
         if a.id[0] != 'r':
-            raise Exception("Non article is get_aticles! %s" % a)
+            raise Exception("Non article is get_articles! %s" % a)
         try:
             kwds = a.get_preproc_title()
             if a.get_date() != last_start_date:
@@ -78,7 +78,11 @@ def process_cluster(article, tweets):
     rumor_value = 0
 
     rumor_value += sum([
-                           (tweet.n_quationmarks - tweet.n_abbriviations * 0.5 + )
+                           (tweet.n_quationmarks * 0.2
+                            - tweet.n_abbriviations * 0.1
+                            - (0.5 if tweet.n_questionmark else 0)
+                            - len(tweet.media) * 0.3)
+                            + (0.1 if tweet.source_type == 'web_client' else -0.1)
                            for tweet in tweets])
 
     return {
