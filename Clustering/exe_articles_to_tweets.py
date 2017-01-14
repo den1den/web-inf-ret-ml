@@ -33,7 +33,7 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
             idf.update(json.load(fp))
 
     # For all articles
-    articles = get_articles(1000, file_offset=12)
+    articles = get_articles(file_offset=10)
     i = 0
     last_start_date = None
 
@@ -44,7 +44,7 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
             kwds = a.get_preproc_title()
             if a.get_date() != last_start_date:
                 last_start_date = a.get_date()
-                update_tweets_cache(last_start_date - timedelta(days=0), last_start_date + timedelta(days=5), tweets_cache)
+                update_tweets_cache(last_start_date - timedelta(days=0), last_start_date + timedelta(days=1), tweets_cache)
 
             all_tweets = []
             for tweets in tweets_cache.values():
@@ -75,7 +75,12 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
 
 def process_cluster(article, tweets):
     article_max_hit = tweets[0][0]
-    rumor_value = random.random() * 2 - 1
+    rumor_value = 0
+
+    rumor_value += sum([
+                           (tweet.n_quationmarks - tweet.n_abbriviations * 0.5 + )
+                           for tweet in tweets])
+
     return {
         'article_max_hit': article_max_hit,
         'rumor_value': rumor_value,
