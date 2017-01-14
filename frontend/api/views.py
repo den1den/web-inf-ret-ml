@@ -110,15 +110,13 @@ def get_tweet_counts_day(request: Request):
     result = OrderedDict()
     #result = {}
 
-    n = 0
     d = start
     while d <= end:
         result_key = d.strftime('%d-%m-%Y')
         tc = TweetCountCache.get_or_create(day=d)
-        n += tc.count
         d += timedelta(days=1)
 
-        result[result_key] = n
+        result[result_key] = tc.count
 
     return JsonResponse(result)
 
