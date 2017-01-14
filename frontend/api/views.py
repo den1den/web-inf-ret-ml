@@ -94,6 +94,35 @@ def get_tweet_counts_week(request: Request):
     return JsonResponse(result)
 
 
+class TweetCountDaysValidator(Serializer):
+    start = serializers.DateField(input_formats=['%d-%m-%Y'])  # DateField
+    end = serializers.DateField(input_formats=['%d-%m-%Y'])  # DateField
+
+
+@api_view(['GET'])
+def get_tweet_counts_day(request: Request):
+    data = request.query_params.copy()
+    v = TweetCountDaysValidator(data=data)
+    v.is_valid(raise_exception=True)
+    start = v.validated_data['start']
+    end = v.validated_data['end']
+
+    result = OrderedDict()
+    #result = {}
+
+    n = 0
+    d = start
+    while d <= end:
+        result_key = d.strftime('%d-%m-%Y')
+        tc = TweetCountCache.get_or_create(day=d)
+        n += tc.count
+        d += timedelta(days=1)
+
+        result[result_key] = n
+
+    return JsonResponse(result)
+
+
 # Tweet Clusters ################################################################
 class ArticleFilter(django_filters.rest_framework.FilterSet):
     article = django_filters.CharFilter(name="article__article_id")
