@@ -1,5 +1,6 @@
 import itertools
 import subprocess
+from collections import OrderedDict
 from datetime import timedelta
 
 import django_filters
@@ -71,7 +72,7 @@ def get_tweet_counts_week(request: Request):
     start = v.validated_data['start']
     end = v.validated_data['end']
 
-    result = {}
+    result = OrderedDict()
 
     week_start = start
     while week_start <= end:
