@@ -181,6 +181,44 @@ class CSVInputReader(InputReader):
         return raw_data
 
 
+class Input2000Reader(InputReader):
+    def __init__(self, dir_path, columns, item_offset=0, file_offset=0, filename_prefix='', filename_postfix='.csv',
+                 dir_name_prefix='', file_alternation=1, file_alternation_index=0, delimiter=';'):
+        super().__init__(dir_path, item_offset, file_offset, filename_prefix, filename_postfix, dir_name_prefix,
+                         file_alternation, file_alternation_index)
+        self.columns = columns
+        self.delimiter = delimiter
+
+    def read_file(self):
+        return [0 for r in range(1, 20000)]
+
+    def count_all(self, function=lambda x: x, item_count=None, item_offset=0):
+        print(
+            "Info: read all entries (with entry offset %d) from all `%s*%s` files (with file offset %d) from `%s`" %
+            (self.item_offset, self.filename_prefix, self.filename_postfix, self.file_offset, self.dir_path)
+        )
+
+        t0 = time.time()
+        self.items = []
+        i = 0
+        for item in self:
+            i += 1
+        t1 = time.time()
+        duration = t1 - t0
+
+        if item_count is not None and len(self.items) != item_count:
+            raise AssertionError("Error: could only read %d of %d entries" % (len(self.items), item_count))
+
+        if self.filecounter == 0:
+            print("Info: read %d entries read from %d files" % (len(self.items), self.filecounter))
+        else:
+            print(
+                "Info: read %d entries read from %d files (%.2f sec per file, %.0f seconds in total)"
+                % (len(self.items), self.filecounter, duration / self.filecounter, duration)
+            )
+        return i
+
+
 def csv_read(filepath, column=None, delimiter=';'):
     """
     Warning: will not read correct data type

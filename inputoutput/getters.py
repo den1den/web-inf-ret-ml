@@ -2,7 +2,7 @@ import os
 from datetime import date, timedelta
 
 from config import config
-from inputoutput.readers import CSVInputReader, InputReader
+from inputoutput.readers import CSVInputReader, InputReader, Input2000Reader
 from models.article import Article
 from models.tuser import TUser
 from models.tweet import Tweet
@@ -36,6 +36,15 @@ def update_tweets_cache(start_date: date, end_date: date, tweets_cache: dict):
     print("update_tweets_cache(removed=%d, added=%d, size=%d)" % (len(remove_keys), i, len(tweets_cache)))
 
 
+def get_tweets_count_by_date(start_date: date, end_date: date):
+    n = 0
+    d = start_date
+    while d <= end_date:
+        n += get_tweet_count(filename_prefix=d.strftime('tweets_%Y_%m_%d'))
+        d += timedelta(days=1)
+    return n
+
+
 def get_tweets_by_date(start_date: date, end_date: date):
     tweets = []
     d = start_date
@@ -43,6 +52,26 @@ def get_tweets_by_date(start_date: date, end_date: date):
         tweets += get_tweets(filename_prefix=d.strftime('tweets_%Y_%m_%d'))
         d += timedelta(days=1)
     return tweets
+
+
+def get_tweet_count(file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
+    """
+    Read in tweets from files
+    see input.read_json_array_from_files()
+    :rtype [Tweet]
+    """
+    from preprocessing.tweet_preprocessor import TweetPreprocessor
+    r = Input2000Reader(dir_path, TweetPreprocessor.TWEET_COLUMNS, file_offset=file_offset,
+                       filename_prefix=filename_prefix)
+    all = r.count_all(to_tweet)
+    if all == 0:
+        return 0
+    all -= 20000 - 1
+    # really read the last
+    # next_file = "%s%d%s" % (r.current_file[:-5], int(r.current_file[-5]) + 1,  r.current_file[-4:])
+    r = CSVInputReader(dir_path, TweetPreprocessor.TWEET_COLUMNS, filename_prefix=os.path.basename(r.current_file))
+    all += len(r.read_all(to_tweet))
+    return all
 
 
 def get_tweets(tweets_n=None, file_offset=0, dir_path=TWEETS_DIR, filename_prefix=''):
