@@ -46,6 +46,7 @@ class Cluster(models.Model):
     article = models.ForeignKey('Article')
     tweets = models.ManyToManyField('Tweet', through='TweetClusterMembership')
     checked = models.BooleanField(default=False)
+    rumor_ration = models.DecimalField(max_digits=10, decimal_places=6)
 
 
 class TweetClusterMembership(models.Model):

@@ -63,4 +63,4 @@ class ClusterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Cluster
-        fields = ('id', 'tweets', 'article', 'url',)
+        fields = ('id', 'tweets', 'article', 'url', 'rumor_ration', )

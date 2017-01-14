@@ -70,6 +70,8 @@ class Command(BaseCommand):
             if len(cluster_candidates) == 1:
                 # One found
                 cluster = cluster_candidates[0]
+                cluster.rumor_ration = cluster_dict['rumor_value']
+                cluster.save()
                 print('Updating: cluster of article %s' % cluster.article.article_id)
 
                 i = 0
@@ -101,7 +103,7 @@ class Command(BaseCommand):
                 # None found
 
                 # create cluster
-                cluster = Cluster.objects.create(article=article)
+                cluster = Cluster.objects.create(article=article, rumor_ration=cluster_dict['rumor_value'])
                 cluster.save()
                 created += 1
 
