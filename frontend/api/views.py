@@ -1,5 +1,6 @@
 import itertools
 import subprocess
+from collections import OrderedDict
 from datetime import timedelta
 
 import django_filters
@@ -71,7 +72,7 @@ def get_tweet_counts_week(request: Request):
     start = v.validated_data['start']
     end = v.validated_data['end']
 
-    result = {}
+    result = OrderedDict()
 
     week_start = start
     while week_start <= end:
@@ -89,6 +90,33 @@ def get_tweet_counts_week(request: Request):
         result[result_key] = n
 
         week_start = next_week_start
+
+    return JsonResponse(result)
+
+
+class TweetCountDaysValidator(Serializer):
+    start = serializers.DateField(input_formats=['%d-%m-%Y'])  # DateField
+    end = serializers.DateField(input_formats=['%d-%m-%Y'])  # DateField
+
+
+@api_view(['GET'])
+def get_tweet_counts_day(request: Request):
+    data = request.query_params.copy()
+    v = TweetCountDaysValidator(data=data)
+    v.is_valid(raise_exception=True)
+    start = v.validated_data['start']
+    end = v.validated_data['end']
+
+    result = OrderedDict()
+    #result = {}
+
+    d = start
+    while d <= end:
+        result_key = d.strftime('%d-%m-%Y')
+        tc = TweetCountCache.get_or_create(day=d)
+        d += timedelta(days=1)
+
+        result[result_key] = tc.count
 
     return JsonResponse(result)
 
