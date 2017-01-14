@@ -1,4 +1,6 @@
 import json
+
+import nltk.sentiment.util
 import os
 import random
 from _operator import itemgetter
@@ -86,8 +88,9 @@ def process_cluster(article, idf_and_tweets):
         question_marks = - (0.5 if tweet['questionmark'] else 0)
         media = -len(tweet['media']) * 0.3
         source = 0.2 if tweet['source_type'] == 'web_client' else -0.1
+        sentiment = 0.5 - nltk.sentiment.util.demo_vader_instance(tweet['full_text'])
 
-        tweet_rumor_value = quotation_marks + abbreviations + question_marks + media + source
+        tweet_rumor_value = quotation_marks + abbreviations + question_marks + media + source + sentiment
         tweet_output = {
             'id': tweet.id_str(),
             'idf_sum': idf,
@@ -96,6 +99,7 @@ def process_cluster(article, idf_and_tweets):
             'question_marks': question_marks,
             'media': media,
             'source': source,
+            'sentiment': sentiment,
             'tweet_rumor_value': tweet_rumor_value,
         }
         print("tweets_output:\n%s\n%s\n" % (tweet, tweet_output))
