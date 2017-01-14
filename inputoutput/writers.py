@@ -96,7 +96,7 @@ def csv_write(filepath, items, columns=None):
                 # TODO: when this is not a dict something goes wrong!
                 raise Exception("Coul not write: %s" % item)
             out_item = {key: (item[key] if (key in item and item[key] is not None) else '') for key in columns}
-            writer.writerow([out_item[col] for col in columns])
+            writer.writerow([out_item[col].replace('\n', '') for col in columns])
             written_items.append(out_item)
     print("Info: %d items written to %s" % (len(items), filepath))
     return written_items
