@@ -73,24 +73,42 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
     json.dump(article_clusters, open(article_clusters_filepath, 'w+', encoding='utf-8'), indent=1)
 
 
-def process_cluster(article, tweets):
-    article_max_hit = tweets[0][0]
+def process_cluster(article, idf_and_tweets):
+    article_max_hit = idf_and_tweets[0][0]
     rumor_value = 0
 
-    rumor_value += sum([
-                           (tweet.n_quationmarks * 0.2
-                            - tweet.n_abbriviations * 0.1
-                            - (0.5 if tweet.n_questionmark else 0)
-                            - len(tweet.media) * 0.3)
-                            + (0.1 if tweet.source_type == 'web_client' else -0.1)
-                           for tweet in tweets])
+    tweets_output = []
+
+    for idf, tweet in idf_and_tweets:
+
+        quotation_marks = int(tweet['n_quationmarks']) / len(tweet['keywords']) * 0.5
+        abbreviations = - int( tweet['n_abbriviations']) / len(tweet['keywords']) * 1
+        question_marks = - (0.5 if tweet['questionmark'] else 0)
+        media = -len(tweet['media']) * 0.3
+        source = 0.2 if tweet['source_type'] == 'web_client' else -0.1
+
+        tweet_rumor_value = quotation_marks + abbreviations + question_marks + media + source
+        tweet_output = {
+            'id': tweet.id_str(),
+            'idf_sum': idf,
+            'quotation_marks': quotation_marks,
+            'abbreviations': abbreviations,
+            'question_marks': question_marks,
+            'media': media,
+            'source': source,
+            'tweet_rumor_value': tweet_rumor_value,
+        }
+        print("tweets_output:\n%s\n%s\n" % (tweet, tweet_output))
+        rumor_value += tweet_rumor_value
+
+        tweets_output.append(tweet_output)
+
+    rumor_value /= len(idf_and_tweets)
 
     return {
         'article_max_hit': article_max_hit,
         'rumor_value': rumor_value,
-        'tweets': [
-            {'id': tweet.id_str(), 'idf_sum': idf_sum}
-            for (idf_sum, tweet) in tweets],
+        'tweets': tweets_output,
     }
 
 
