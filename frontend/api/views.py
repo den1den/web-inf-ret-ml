@@ -2,19 +2,21 @@ import itertools
 import subprocess
 from datetime import timedelta
 
+import django_filters
 from django.http.response import StreamingHttpResponse, JsonResponse
 from django.utils.html import escape
 from django.views import View
+from django_filters.rest_framework import DjangoFilterBackend, filters
 from rest_framework import serializers
 from rest_framework import viewsets
 from rest_framework.decorators import api_view
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 
 from config.config import PHP_MAIN_SCRIPT
 from frontend.api.models import TweetCountCache, Cluster
 from frontend.api.serializer import TweetCountCacheSerializer, ClusterSerializer
+from frontend.base.pagination import LimitedPagenumbrPagination
 
 
 def stream_command_output_git():
@@ -37,10 +39,6 @@ class TestPhpOutputView(View):
     def get(self, request, *args, **kwargs):
         php_args = 'test_command'
         return StreamingHttpResponse(stream_command_output(PHP_MAIN_SCRIPT + ' ' + php_args))
-
-
-class LimitedPagenumbrPagination(PageNumberPagination):
-    page_size = 10
 
 
 # Tweet Counts ################################################################
@@ -96,13 +94,23 @@ def get_tweet_counts_week(request: Request):
 
 
 # Tweet Clusters ################################################################
+class ArticleFilter(django_filters.rest_framework.FilterSet):
+    article = django_filters.CharFilter(name="article__article_id")
+
+    class Meta:
+        model = Cluster
+        fields = ['article']
+
 class ClusterViewSet(viewsets.ReadOnlyModelViewSet):
     """
     These are all the clusters that we have
     """
     serializer_class = ClusterSerializer
+    # queryset = Cluster.objects.filter(article__article_id='r405155958')
     queryset = Cluster.objects.all()
     pagination_class = LimitedPagenumbrPagination
+    filter_backends = (django_filters.rest_framework.DjangoFilterBackend,)
+    filter_class = ArticleFilter
 
 
 class ClusterManualViewSet(viewsets.ReadOnlyModelViewSet):
