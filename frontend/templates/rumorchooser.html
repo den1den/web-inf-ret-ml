@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Rumor chooser</title>
+
+</head>
+<body>
+<button id="get-data">Get data</button>
+<div id="show-data">
+Loading...
+</div>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+        $.ajaxSettings.traditional = true;
+        var next_url = 'http://group1.ga:8081/tweet_cluster/';
+        var results = [];
+        function onclick() {
+            var showData = $('#show-data');
+
+            $.getJSON(next_url, function (resp) {
+                next_url = resp.next;
+                results = resp.results;
+
+                var items = results.map(function (cluster) {
+                    return cluster.article + '<br/>' + cluster.tweets.map(function (item) {
+                                return item.tweet + ' (' + item.attributes.map(function (attr) {
+                                            return attr.attribute + ': ' + attr.value + ', ';
+                                        }) + ')';
+                            });
+                });
+
+                showData.empty();
+
+                if (items.length) {
+                    var content = '<li>' + items.join('</li><li>') + '</li>';
+                    var list = $('<ul />').html(content);
+                    showData.append(list);
+                }
+            });
+        }
+        $('#get-data').click(onclick);
+        onclick();
+    });
+</script>
+</body>
+</html>

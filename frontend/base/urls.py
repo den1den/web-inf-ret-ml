@@ -23,6 +23,7 @@ from frontend.api.views import TestPhpOutputView
 
 urlpatterns = [url(r'^home/', TemplateView.as_view(template_name="index.html")),
                url(r'^admin/', admin.site.urls),
+               url(r'^ml/', TemplateView.as_view(template_name="rumorchooser.html")),
                url(r'^test/php/', TestPhpOutputView.as_view()),
                url(r'^', include('frontend.api.urls')),
                ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
