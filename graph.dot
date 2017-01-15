@@ -1,0 +1,243 @@
+digraph model_graph {
+	graph [bb="0,0,589.5,404",
+		fontname=Helvetica,
+		fontsize=8,
+		splines=true
+	];
+	node [fontname=Helvetica,
+		fontsize=8,
+		label="\N",
+		shape=plaintext
+	];
+	edge [fontname=Helvetica,
+		fontsize=8
+	];
+	frontend_api_models_TweetCountCache	 [height=0.70833,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TweetCountCache
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">day</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">DateField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">count</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">PositiveIntegerField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="78.5,365.5",
+		width=2.1806];
+	frontend_api_models_Tweet	 [height=0.70833,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Tweet
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">tweet_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="313.5,134.5",
+		width=1.8889];
+	frontend_api_models_Article	 [height=0.70833,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Article
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">article_id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="487.5,25.5",
+		width=1.9028];
+	frontend_api_models_TweetClusterAttributes	 [height=0.70833,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TweetClusterAttributes
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">name</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">CharField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="213.5,250",
+		width=2.1111];
+	frontend_api_models_TweetClusterAttributeValue	 [height=1.0694,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TweetClusterAttributeValue
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">attribute</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">tweet_cluster_membership</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">value</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DecimalField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="298.5,365.5",
+		width=3.4306];
+	frontend_api_models_TweetClusterAttributeValue -> frontend_api_models_TweetClusterAttributes	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="attribute (b&#39;tweetclusterattributevalue&#39;)",
+		lp="290.5,304.5",
+		pos="s,235.04,327 229.48,321.2 226.11,317.38 223.06,313.31 220.5,309 214.59,299.06 212.56,286.47 212.12,275.56"];
+	frontend_api_models_TweetClusterMembership	 [height=0.88889,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    TweetClusterMembership
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">cluster</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">tweet</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="388.5,250",
+		width=2.2361];
+	frontend_api_models_TweetClusterAttributeValue -> frontend_api_models_TweetClusterMembership	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="tweet_cluster_membership (b&#39;tweetclusterattributevalue&#39;)",
+		lp="470,304.5",
+		pos="s,344.94,326.69 350.61,320.79 354.13,316.96 357.48,313.01 360.5,309 366.62,300.87 371.93,291.19 376.22,282.09"];
+	frontend_api_models_Cluster	 [height=1.0694,
+		label=<
+    <TABLE BGCOLOR="palegoldenrod" BORDER="0" CELLBORDER="0" CELLSPACING="0">
+    <TR><TD COLSPAN="2" CELLPADDING="4" ALIGN="CENTER" BGCOLOR="olivedrab4">
+    <FONT FACE="Helvetica Bold" COLOR="white">
+    Cluster
+    </FONT></TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">id</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">AutoField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica Bold">article</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica Bold">ForeignKey (id)</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">checked</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT COLOR="#7B7B7B" FACE="Helvetica ">BooleanField</FONT>
+    </TD></TR>
+  
+    <TR><TD ALIGN="LEFT" BORDER="0">
+    <FONT FACE="Helvetica ">rumor_ration</FONT>
+    </TD><TD ALIGN="LEFT">
+    <FONT FACE="Helvetica ">DecimalField</FONT>
+    </TD></TR>
+  
+    </TABLE>
+    >,
+		pos="487.5,134.5",
+		width=2.4444];
+	frontend_api_models_Cluster -> frontend_api_models_Article	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="article (b&#39;cluster&#39;)",
+		lp="519,73.5",
+		pos="s,487.5,95.776 487.5,87.655 487.5,75.128 487.5,62.028 487.5,51.181"];
+	frontend_api_models_TweetClusterMembership -> frontend_api_models_Tweet	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="tweet (b&#39;tweetclustermembership&#39;)",
+		lp="390,195.5",
+		pos="s,341.46,218 335.77,212.2 332.3,208.37 329.14,204.3 326.5,200 319.21,188.12 315.92,172.92 314.47,160.25"];
+	frontend_api_models_TweetClusterMembership -> frontend_api_models_Cluster	 [arrowhead=none,
+		arrowtail=dot,
+		dir=both,
+		label="cluster (b&#39;tweetclustermembership&#39;)",
+		lp="524.5,195.5",
+		pos="s,435.14,217.89 441.23,212.58 445.62,208.58 449.79,204.37 453.5,200 460.31,192 466.28,182.4 471.23,173.09"];
+}
