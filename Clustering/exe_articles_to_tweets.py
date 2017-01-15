@@ -5,18 +5,18 @@ import os
 import random
 from _operator import itemgetter
 from datetime import timedelta
-
+from nltk.sentiment import SentimentIntensityAnalyzer
 from Clustering.clustering import find_tweets_with_keywords_idf
 from config.config import PROJECT_DIR, PCLOUD_DIR
 from inputoutput.cli import query_yes_no
-from inputoutput.getters import get_articles, update_tweets_cache
+from inputoutput.getters import get_articles, update_tweets_cache, get_articles_by_date
 
 # output
 article_clusters = {}  # article_id -> tweet_id
 article_clusters_filepath = os.path.join(PROJECT_DIR, 'article_clusters.json')
 
 # the idf baseline to use
-idf_files = [os.path.join(PCLOUD_DIR, 'idf', 'idf_tweet_600000_0.json'), os.path.join(PCLOUD_DIR, 'idf', 'idf_tweet_577244_1.json')]
+idf_file = os.path.join(PCLOUD_DIR, 'idf', 'idf_tweet_PD_ALL.json')
 
 # treshold to make sure only words that are unique are searched for
 TRESHOLD = 15
@@ -24,29 +24,27 @@ TRESHOLD = 15
 def exe(article_clusters, article_clusters_filepath, TRESHOLD):
     tweets_cache = {}
 
-    if os.path.exists(article_clusters_filepath):
-        if not query_yes_no("Are you sure you want to overwrite %s" % article_clusters_filepath, default='no'):
-            exit()
+    # if os.path.exists(article_clusters_filepath):
+    #     if not query_yes_no("Are you sure you want to overwrite %s" % article_clusters_filepath, default='no'):
+    #         exit()
 
     # get idf values
-    idf = {}
-    for idf_file in idf_files:
-        with open(idf_file) as fp:
-            idf.update(json.load(fp))
+    with open(idf_file) as fp:
+        idf = json.load(fp)
 
     # For all articles
-    articles = get_articles(file_offset=10)
-    i = 0
+    articles = get_articles_by_date(filename_prefix='articles_2016_09') + get_articles_by_date(filename_prefix='articles_2016_1')
+    i = 1
     last_start_date = None
 
     for a in articles:
-        if a.id[0] != 'r':
-            raise Exception("Non article is get_articles! %s" % a)
         try:
+            if a.id[0] != 'r':
+                raise Exception("Non article is get_articles! %s" % a)
             kwds = a.get_preproc_title()
             if a.get_date() != last_start_date:
                 last_start_date = a.get_date()
-                update_tweets_cache(last_start_date - timedelta(days=0), last_start_date + timedelta(days=1), tweets_cache)
+                update_tweets_cache(last_start_date - timedelta(days=0), last_start_date + timedelta(days=10), tweets_cache)
 
             all_tweets = []
             for tweets in tweets_cache.values():
@@ -55,9 +53,10 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
             if len(ts) > 0:
                 ts.sort(reverse=True, key=itemgetter(0))
                 article_clusters[a.id] = process_cluster(a, ts)
+                i += 1
             else:
-                print("No hit on %s" % a)
                 # Do not add to output
+                pass
         except Exception as err:
             try:
                 print("Writing to %s" % article_clusters_filepath)
@@ -66,15 +65,17 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
                 print(article_clusters)
                 raise e
             print("Error: Could not cluster with article %s\n%s" % (a, err))
-        i += 1
-        if i % 20 == 0:
+        if i % 200 == 0:
             print("Writing to %s" % article_clusters_filepath)
             json.dump(article_clusters, open(article_clusters_filepath, 'w+', encoding='utf-8'), indent=1)
 
     print("Writing to %s" % article_clusters_filepath)
     json.dump(article_clusters, open(article_clusters_filepath, 'w+', encoding='utf-8'), indent=1)
 
-
+vader_analyzer = SentimentIntensityAnalyzer()
+####
+#### DO THIS
+####
 def process_cluster(article, idf_and_tweets):
     article_max_hit = idf_and_tweets[0][0]
     rumor_value = 0
@@ -88,7 +89,9 @@ def process_cluster(article, idf_and_tweets):
         question_marks = - (0.5 if tweet['questionmark'] else 0)
         media = -len(tweet['media']) * 0.3
         source = 0.2 if tweet['source_type'] == 'web_client' else -0.1
-        sentiment = 0.5 - nltk.sentiment.util.demo_vader_instance(tweet['full_text'])
+
+        polarity_scores = vader_analyzer.polarity_scores(tweet['full_text'])
+        sentiment = polarity_scores['neu'] - 0.5
 
         tweet_rumor_value = quotation_marks + abbreviations + question_marks + media + source + sentiment
         tweet_output = {
@@ -102,7 +105,7 @@ def process_cluster(article, idf_and_tweets):
             'sentiment': sentiment,
             'tweet_rumor_value': tweet_rumor_value,
         }
-        print("tweets_output:\n%s\n%s\n" % (tweet, tweet_output))
+        # print("tweets_output:\n%s\n%s\n" % (tweet, tweet_output))
         rumor_value += tweet_rumor_value
 
         tweets_output.append(tweet_output)

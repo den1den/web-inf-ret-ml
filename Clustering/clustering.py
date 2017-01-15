@@ -51,7 +51,11 @@ def find_tweets_with_keywords_idf(tweets, keywords, idf, idf_treshold=5):
         for keyword in keywords:
             tweet_keywords = tweet.get_keywords()
             if keyword in tweet_keywords:
-                idf_sum += idf[keyword]
+                if keyword not in idf:
+                    print("Could not find idf value of %s" % idf)
+                    idf_sum += 3
+                else:
+                    idf_sum += idf[keyword]
             if idf_sum >= idf_treshold:
                 p = True
         if p:
