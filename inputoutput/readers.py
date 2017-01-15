@@ -109,10 +109,10 @@ class InputReader:
         return nxt
 
     def read_all(self, function=lambda x: x, item_count=None, item_offset=0):
-        print(
-            "Info: read all entries (with entry offset %d) from all `%s*%s` files (with file offset %d) from `%s`" %
-            (self.item_offset, self.filename_prefix, self.filename_postfix, self.file_offset, self.dir_path)
-        )
+        # print(
+        #     "Info: read all entries (with entry offset %d) from all `%s*%s` files (with file offset %d) from `%s`" %
+        #     (self.item_offset, self.filename_prefix, self.filename_postfix, self.file_offset, self.dir_path)
+        # )
 
         t0 = time.time()
         self.items = []
@@ -136,7 +136,7 @@ class InputReader:
             raise AssertionError("Error: could only read %d of %d entries" % (len(self.items), item_count))
 
         if self.filecounter == 0:
-            print("Info: read %d entries read from %d files" % (len(self.items), self.filecounter))
+            pass
         else:
             print(
                 "Info: read %d entries read from %d files (%.2f sec per file, %.0f seconds in total)"

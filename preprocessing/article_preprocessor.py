@@ -9,7 +9,7 @@ from inputoutput.writers import Writer
 from preprocessing.preprocess_util import re_whitespace, re_html, re_unicode_decimal, MultiProcessor, replace_in_string, \
     remove_unicode, remove_unprintable, replace_whitespaces, replace_html_entities, re_quotations, \
     re_quotations_somewhere, re_quotations_somewhere_single, re_quotations_somewhere_slashes, re_url_wp_date, \
-    re_url_stripes, re_url_stripes_no_id
+    re_url_stripes, re_url_stripes_no_id, re_title_2
 
 
 def get_new_id(generator: str, seen_ids: set, prefix=''):
@@ -44,7 +44,7 @@ class ArticlePreprocessor(MultiProcessor):
         url_str = raw_data['Link']
         unqique_str = url_str
         if unqique_str in self.seen_urls:
-            print("Info: article already seen, skipping %s:%d" % (self.reader.current_file, self.reader.i))
+            # print("Info: already seen, skipping %s:%d" % (self.reader.current_file, self.reader.i))
             return
         self.seen_urls.add(unqique_str)
 
@@ -173,7 +173,7 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             domain = domain[0:len(domain) - 4]
         # check if duplicate
         if link_str in self.seen_urls:
-            print("Info: article already seen, skipping %s:%d" % (self.reader.current_file, self.reader.i))
+            # print("Info: article already seen, skipping %s:%d" % (self.reader.current_file, self.reader.i))
             return
         self.seen_urls.add(link_str)
 
@@ -186,7 +186,6 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
 
         #title & author
         if origin == 'huffpost':
-            return
             # Title
             title_loc1 = raw_article.find("window.HP.modules.smarten.selector('.js-nav-sticky')")
             title_loc2 = raw_article.find("\"pageName\"")
@@ -218,15 +217,19 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
             #Title
             title_loc1 = raw_article.find("pageTitle")
             if title_loc1 != -1:
-                raw_title = raw_article[title_loc1 + 9: title_loc1 + 209]
-                match = re.match(re_quotations_somewhere_single, raw_title)
+                raw_title = raw_article[title_loc1 + 9: title_loc1 + 409].replace('\n', ' ').strip()
+                match = re.match(re_title_2, raw_title)
                 if match:
                     title = match.group(1)
+                    if title.lower().endswith('- la times'):
+                        title = title[:-10]
                 else:
-                    print('No match for title')
-                    title = "Unknown Title"
+                    print("Does not match:\n%s" % raw_title)
+                    # skip unknown titles
+                    return
             else:
-                title = "Unknown Title"
+                # pick first sentence
+                title = raw_article.split('.')[0]
 
             # Author
             author_loc1 = raw_article.find("page.author")
@@ -252,7 +255,8 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                     raw_title = match.group(1)
                     title = raw_title.replace('-', ' ')
                 else:
-                    title = "Unknown Title"
+                    # skip unknown titles
+                    return
 
             #Author
             author_loc = raw_article.find('By')
@@ -274,7 +278,8 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                 raw_title = match.group(1)
                 title = raw_title.replace('-', ' ')
             else:
-                title = "Unknown Title"
+                # skip unknown titles
+                return
 
             #Author
             authors = "Unknown Author"
@@ -291,7 +296,8 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
                     raw_title = match.group(1)
                     title = raw_title.replace('-', ' ')
                 else:
-                    title = "Unknown Title"
+                    # skip unknown titles
+                    return
 
             #Author
             authors = "Unknown Author"
@@ -325,7 +331,7 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
         # author
         authors = self.parse_authors(authors=authors)
         if authors != []:
-            print('yes')
+            pass
         author_ids = []
         for author in authors:
             author_ids.append(author['id'])
@@ -333,6 +339,8 @@ class ArticlePreprocessorSander(ArticlePreprocessor):
         # description
         description = 'No description'
         is_html = 'True'
+
+        title = title.replace('\n', '').strip()
 
         self.processed_obj(0, {
             'id': article_id,

@@ -10,6 +10,7 @@ from models.tweet import Tweet
 TWEETS_DIR = os.path.join(config.PCLOUD_DIR, 'tweets')
 TWEET_USERS_DIR = os.path.join(config.PCLOUD_DIR, 'users')
 ARTICLES_DIR = os.path.join(config.PCLOUD_DIR, 'preprocessed_articles', 'sander_results')
+ARTICLES_DIR_BY_DATE = os.path.join(config.PCLOUD_DIR, 'preprocessed_articles', 'sander_results_bydate')
 
 
 def update_tweets_cache(start_date: date, end_date: date, tweets_cache: dict):
@@ -105,14 +106,18 @@ def to_tuser(preprocessed_data):
     return TUser(preprocessed_data)
 
 
-def get_articles(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix='articles_'):
+def get_articles(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR, filename_prefix=''):
     """
     Read in twitter user accounts from files
     see input.read_json_array_from_files()
     """
     from preprocessing.article_preprocessor import ArticlePreprocessor
-    r = CSVInputReader(dir_path, ArticlePreprocessor.ARTICLE_COLUMNS, file_offset=file_offset)
+    r = CSVInputReader(dir_path, ArticlePreprocessor.ARTICLE_COLUMNS, file_offset=file_offset, filename_prefix=filename_prefix)
     return r.read_all(to_article, item_count=articles_n)
+
+
+def get_articles_by_date(articles_n=None, file_offset=0, dir_path=ARTICLES_DIR_BY_DATE, filename_prefix=''):
+    return get_articles(articles_n=articles_n, file_offset=file_offset, dir_path=dir_path, filename_prefix=filename_prefix)
 
 
 def to_article(preprocessed_data):

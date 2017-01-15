@@ -95,9 +95,15 @@ def csv_write(filepath, items, columns=None):
             if not type({}) is dict:
                 # TODO: when this is not a dict something goes wrong!
                 raise Exception("Coul not write: %s" % item)
-            out_item = {key: (item[key] if (key in item and item[key] is not None) else '') for key in columns}
-            writer.writerow([out_item[col].replace('\n', '') for col in columns])
-            written_items.append(out_item)
+            out_items = {}
+            for key in columns:
+                if key in item and item[key] is not None:
+                    i = item[key]
+                    if type(i) is str:
+                        i = i.replace('\n', '')
+                    out_items[key] = i
+            writer.writerow([out_items[col] for col in columns])
+            written_items.append(out_items)
     print("Info: %d items written to %s" % (len(items), filepath))
     return written_items
 

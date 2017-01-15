@@ -3,7 +3,8 @@ import re
 from datetime import datetime
 
 from config import config
-from inputoutput.input import CSVInputReader, CSVWriter, csv_read
+from inputoutput.readers import csv_read, CSVInputReader
+from inputoutput.writers import CSVWriter
 from preprocessing.article_preprocessor import ArticlePreprocessor
 from preprocessing.tweet_preprocessor import TweetPreprocessor
 
