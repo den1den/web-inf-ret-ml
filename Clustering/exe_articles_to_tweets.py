@@ -13,7 +13,7 @@ from inputoutput.getters import get_articles, update_tweets_cache, get_articles_
 
 # output
 article_clusters = {}  # article_id -> tweet_id
-article_clusters_filepath = os.path.join(PROJECT_DIR, 'article_clusters.json')
+article_clusters_filepath = os.path.join(PROJECT_DIR, 'article_clusters_PD_after_2016_11_07.json')
 
 # the idf baseline to use
 idf_file = os.path.join(PCLOUD_DIR, 'idf', 'idf_tweet_PD_ALL.json')
@@ -32,8 +32,17 @@ def exe(article_clusters, article_clusters_filepath, TRESHOLD):
     with open(idf_file) as fp:
         idf = json.load(fp)
 
-    # For all articles
-    articles = get_articles_by_date(filename_prefix='articles_2016_09') + get_articles_by_date(filename_prefix='articles_2016_1')
+    # For all articles after 2016_11_06
+    articles = []
+    for m in [11, 12]:
+        if m == 11:
+            for d in range(7, 32):
+                articles += get_articles_by_date(filename_prefix='articles_2016_%d_%02d' % (m, d))
+        else:
+            for d in range(1, 32):
+                articles += get_articles_by_date(filename_prefix='articles_2016_%d_%02d' % (m, d))
+    articles += get_articles_by_date(filename_prefix='articles_2017')
+
     i = 1
     last_start_date = None
 
