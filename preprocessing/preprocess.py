@@ -1,7 +1,7 @@
 import os
 
 from config import config
-from config.config import PCLOUD_DIR
+from config.config import PCLOUD_DIR, PCLOUD_BUFFER_DIR
 
 from inputoutput.readers import CSVInputReader, InputReader, JSONInputReader
 from inputoutput.writers import CSVWriter
@@ -44,10 +44,12 @@ def pp_articles_adrian():
 
 def pp_articles_sander():
     # Read and process all tweets from config.TWEETS_RAW_HOMEDIR
-    inputdir = ''.join([PCLOUD_DIR, '\JSON results'])
+    inputdir = r'H:\TWEETS\POST_DL\RAW\Huffpost\Huffpost'
+    inputdir = r'H:\TWEETS\POST_DL\RAW\washpost\washpost'
+    inputdir = r'H:\TWEETS\POST_DL\RAW'
 
-    outputdir_articles = os.path.join(os.path.dirname(inputdir), 'preprocessed_articles\\sander_results')
-    outputdir_authors = os.path.join(os.path.dirname(inputdir), 'preprocessed_authors\\sander_results')
+    outputdir_articles = r'H:\TWEETS\POST_DL\PRE\articles_sander_results'
+    outputdir_authors = r'H:\TWEETS\POST_DL\PRE\authors_sander_results'
 
     pre_processor = ArticlePreprocessorSander(
         JSONInputReader(inputdir),

@@ -117,3 +117,5 @@ article_clusters*.json
 
 runserver.sh
 
+venv_64/
+db.sqlite3-journal

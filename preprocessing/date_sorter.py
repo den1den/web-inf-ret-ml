@@ -32,10 +32,13 @@ def µ_tweets():
 
 
 def µ_articles():
-    sorted_output_dir = 'H:\TWEETS\sorted_artices'
+    inputdir = r'H:\TWEETS\POST_DL\PRE\articles_sander_results'
+    sorted_output_dir = r'H:\TWEETS\POST_DL\PRE\articles_sorted_sander_results'
+
     base_filename = 'articles'
+
     columns = ArticlePreprocessor.ARTICLE_COLUMNS
-    inputdir = os.path.join(config.PCLOUD_DIR, base_filename, '20161003_20161115')
+
     µ(sorted_output_dir, base_filename, columns, inputdir, article_to_date)
 
 
